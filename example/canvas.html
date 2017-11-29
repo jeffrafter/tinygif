@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Animated_GIF - basic test</title>
+    <script defer src="../dist/tinygif.js"></script>
+    <script defer src="canvas.js"></script>
+  </head>
+  <body>
+    <h1>Animated_GIF</h1>
+    <p>A library that makes creating animated GIFs easy. Everything is client-side, using JavaScript.</p>
+    <p><a href="https://github.com/sole/Animated_GIF/">Get the source</a> and start animating today!</p>
+    <p id="status">
+      <p id="recording_status">&nbsp;</p>
+      <p id="processing_status">&nbsp;</p>
+    </p>
+    <div id="sample_image"><img src=""></div>
+    <canvas width="300" height="300" id="sample_canvas"></canvas>
+    <style>
+      #processing_status, #recording_status {
+        font-family: Courier, mono;
+        font-size: 1.2rem;
+        background: #ccc;
+        padding: 1rem;
+      }
+    </style>
+  </body>
+</html>
