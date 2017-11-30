@@ -106,6 +106,10 @@ export default function Tinygif(options) {
       } else {
         frame.pixels = data.pixels;
         frame.palette = data.palette;
+        frame.x = data.delta.x
+        frame.y = data.delta.y
+        frame.width = data.delta.width
+        frame.height = data.delta.height
 
         // Try to save the palette as the global palette if there is none
         if (!palette) {
@@ -175,7 +179,7 @@ export default function Tinygif(options) {
       if (frame.palette) {
         ensurePalettePowerOfTwo(frame.palette);
       }
-      gifWriter.addFrame(0, 0, width, height, frame.pixels, {
+      gifWriter.addFrame(frame.x, frame.y, frame.width, frame.height, frame.pixels, {
         palette: frame.palette,
         delay: frame.delay
       });

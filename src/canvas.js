@@ -58,6 +58,7 @@ window.onload = function() {
     //https://tiny-packages.s3.amazonaws.com/dist/big-buck-bunny_trailer.webm
     //https://tiny-packages.s3.amazonaws.com/dist/lapse.webm
   }
+  //video()
   simple()
 
   // Getting a gif

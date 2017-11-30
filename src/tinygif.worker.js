@@ -122,14 +122,19 @@ function run(data) {
     }
   }
 
-  var deltaImageData;
-  // TODO shortcut if everything changed and just assign
-  // deltaImageData = imageData
+  var readType = (obj) => {
+    return Object.prototype.toString.call(obj)
+  }
 
-  for (y = delta.y; y < delta.y + delta.height; y++) {
-    var start = (y * width) + delta.x;
-    var end = (y * width) + delta.x + delta.width;
-    deltaImageData.push(imageData.slice(start, end))
+  var deltaImageData = new Uint8ClampedArray(delta.width * delta.height * 4)
+  var deltaIndex = 0;
+  for (var y = delta.y; y < delta.y + delta.height; y++) {
+    var start = (y * width * 4) + (delta.x * 4);
+    var end = (y * width * 4) + (delta.x * 4) + (delta.width * 4);
+    var chunk = imageData.slice(start, end)
+    for (var i = 0; i < chunk.length; i++) {
+      deltaImageData[deltaIndex++] = chunk[i];
+    }
   }
 
   // Prepare an index array into the palette
@@ -169,7 +174,9 @@ function run(data) {
     }
 
     if (globalPaletteMatches) {
+      console.log("Using global palette")
       return {
+        delta: delta,
         pixels: indexedPixels,
         palette: null // use the global
       };
@@ -190,20 +197,19 @@ function run(data) {
     var color = (0 << 24 | r << 16 | g << 8 | b);
     var foundIndex = colorsHash[color];
     if (foundIndex == null) {
-      if (colorsArray.length >= 255) {
-
-      } else {
-        colorsArray.push(color);
-        foundIndex = colorsArray.length - 1;
-        // If there are already too many colors, just bail on this approach
-        colorsHash[color] = foundIndex;
-      }
+      colorsArray.push(color);
+      foundIndex = colorsArray.length - 1;
+      // If there are already too many colors, just bail on this approach
+      if (foundIndex >= 256) break;
+      colorsHash[color] = foundIndex;
     }
     indexedPixels[pixel++] = foundIndex;
   }
 
   if (colorsArray.length < 256) {
+    console.log("Using local colors array")
     return {
+      delta: delta,
       pixels: indexedPixels,
       palette: colorsArray
     };
@@ -227,6 +233,7 @@ function run(data) {
 
   console.log("Using quantizer")
   return {
+    delta: delta,
     pixels: indexedPixels,
     palette: paletteArray,
     quantizer: true
