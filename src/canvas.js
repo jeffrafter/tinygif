@@ -1,3 +1,5 @@
+import Tinygif from "./tinygif"
+
 window.onload = function() {
   var recordingStatus = document.getElementById("recording_status");
   var processingStatus = document.getElementById("processing_status");
@@ -56,7 +58,7 @@ window.onload = function() {
     //https://tiny-packages.s3.amazonaws.com/dist/big-buck-bunny_trailer.webm
     //https://tiny-packages.s3.amazonaws.com/dist/lapse.webm
   }
-  video()
+  simple()
 
   // Getting a gif
   var ag;

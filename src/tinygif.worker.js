@@ -1,3 +1,5 @@
+import NeuQuant from "./NeuQuant"
+
 function dataToRGB(data, width, height) {
   var i = 0;
   var length = width * height * 4;
@@ -27,13 +29,72 @@ function componentizedPaletteToArray(paletteRGB) {
 }
 
 function dirtyRect(previousData, imageData, width, height) {
+  var result = {
+    x: 0,
+    y: 0,
+    width: width,
+    height: height
+  }
+
   if (!previousData) {
-    return {
-      x: 0,
-      y: 0,
-      width: width,
-      height: height
+    return result
+  }
+
+  var left = -1, right = -1, top = -1, bottom = -1;
+
+  for (var i = 0, l = previousData.length; i < l; i++) {
+    if (previousData[i] !== imageData[i]) {
+      top = Math.floor(i / (width * 4));
+      break
     }
+  }
+
+  // There is no delta, all pixels match
+  if (top == -1) {
+    console.log("No delta")
+    return null
+  }
+
+  for (var i = previousData.length - 1; i > -1; i--) {
+    if (previousData[i] !== imageData[i]) {
+      bottom = Math.floor(i / (width * 4));
+      break
+    }
+  }
+
+  for (var x = 0; x < (width * 4); x += 4) {
+    for (var y = 0; y < height; y++) {
+      var pos = (y * (width * 4)) + x;
+      if (previousData[pos] !== imageData[pos] ||
+        previousData[pos + 1] !== imageData[pos + 1] ||
+        previousData[pos + 2] !== imageData[pos + 2] ||
+        previousData[pos + 3] !== imageData[pos + 3]) {
+        left = x / 4;
+        break
+      }
+    }
+    if (left > -1) break;
+  }
+
+  for (var x = ((width - 1) * 4); x > -1; x -= 4) {
+    for (var y = 0; y < height; y++) {
+      var pos = (y * (width * 4)) + x;
+      if (previousData[pos] !== imageData[pos] ||
+        previousData[pos + 1] !== imageData[pos + 1] ||
+        previousData[pos + 2] !== imageData[pos + 2] ||
+        previousData[pos + 3] !== imageData[pos + 3]) {
+        right = x / 4;
+        break
+      }
+    }
+    if (right > -1) break;
+  }
+
+  return {
+    x: left,
+    y: top,
+    width: right - left,
+    height: bottom - top
   }
 }
 
@@ -55,7 +116,11 @@ function run(data) {
 
   // Find the delta
   var delta = dirtyRect(previousData, imageData, width, height);
-
+  if (!delta) {
+    return {
+      skip: true
+    }
+  }
 
   // Prepare an index array into the palette
   var numberPixels = width * height;
@@ -115,11 +180,14 @@ function run(data) {
     var color = (0 << 24 | r << 16 | g << 8 | b);
     var foundIndex = colorsHash[color];
     if (foundIndex == null) {
-      colorsArray.push(color);
-      foundIndex = colorsArray.length - 1;
-      // If there are already too many colors, just bail on this approach
-      if (foundIndex > 255) break;
-      colorsHash[color] = foundIndex;
+      if (colorsArray.length >= 255) {
+
+      } else {
+        colorsArray.push(color);
+        foundIndex = colorsArray.length - 1;
+        // If there are already too many colors, just bail on this approach
+        colorsHash[color] = foundIndex;
+      }
     }
     indexedPixels[pixel++] = foundIndex;
   }
@@ -133,7 +201,7 @@ function run(data) {
 
   // This is the "traditional" animatied gif style of going from RGBA to
   // indexed color frames via sampling
-  /*
+
   var rgbComponents = dataToRGB(imageData, width, height);
   var nq = new NeuQuant(rgbComponents, rgbComponents.length, sampleInterval || 10);
   var paletteRGB = nq.process();
@@ -146,8 +214,6 @@ function run(data) {
     b = rgbComponents[k++];
     indexedPixels[i] = nq.map(r, g, b);
   }
-  */
-  console.log(NeuQuant.quantize)
 
   console.log("Using quantizer")
   return {

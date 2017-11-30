@@ -9,9 +9,9 @@
     "test": "tests"
   },
   "scripts": {
-    "clean": "rimraf lib dist es",
-    "build": "cross-env BABEL_ENV=commonjs babel src/index.js --out-file dist/tinygif.js",
-    "watch": "npm run build -- --watch",
+    "clean": "rimraf dist",
+    "build": "yarn run webpack && rm *.worker.js",
+    "build:watch": "yarn run webpack --colors --watch",
     "lint": "./node_modules/.bin/eslint src",
     "lint-fix": "./node_modules/.bin/eslint --fix src --ext .js",
     "test": "npm run lint",
@@ -24,16 +24,25 @@
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",
     "babel-eslint": "^8.0.2",
+    "babel-loader": "^7.1.2",
     "babel-preset-env": "^1.6.1",
+    "babelify": "^8.0.0",
+    "browserify": "^14.5.0",
     "cross-env": "^5.1.1",
     "eslint": "^4.12.0",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
     "express": "^4.16.2",
-    "rimraf": "^2.6.2"
+    "rimraf": "^2.6.2",
+    "webpack": "3.0",
+    "worker-loader": "^1.1.0"
   },
   "dependencies": {
-    "neuquant-js": "^0.2.1",
     "omggif": "^1.0.8"
+  },
+  "babel": {
+    "presets": [
+      "env"
+    ]
   }
 }
