@@ -122,8 +122,18 @@ function run(data) {
     }
   }
 
+  var deltaImageData;
+  // TODO shortcut if everything changed and just assign
+  // deltaImageData = imageData
+
+  for (y = delta.y; y < delta.y + delta.height; y++) {
+    var start = (y * width) + delta.x;
+    var end = (y * width) + delta.x + delta.width;
+    deltaImageData.push(imageData.slice(start, end))
+  }
+
   // Prepare an index array into the palette
-  var numberPixels = width * height;
+  var numberPixels = delta.width * delta.height;
   var indexedPixels = new Uint8Array(numberPixels);
   var pixel = 0
   var colorsArray = [];
@@ -138,10 +148,10 @@ function run(data) {
     for (var i = 0, l = palette.length; i < l; i++) {
       colorsHash[palette[i]] = i;
     }
-    for (var i = 0, l = imageData.length; i < l; i+=4){
-      var r = imageData[i];
-      var g = imageData[i + 1];
-      var b = imageData[i + 2];
+    for (var i = 0, l = deltaImageData.length; i < l; i+=4){
+      var r = deltaImageData[i];
+      var g = deltaImageData[i + 1];
+      var b = deltaImageData[i + 2];
       // Ignore the alpha channel
       var color = (0 << 24 | r << 16 | g << 8 | b);
       var foundIndex = colorsHash[color];
@@ -172,10 +182,10 @@ function run(data) {
   colorsArray = [];
   colorsHash = {};
   pixel = 0
-  for (var i = 0, l = imageData.length; i < l; i+=4){
-    var r = imageData[i];
-    var g = imageData[i + 1];
-    var b = imageData[i + 2];
+  for (var i = 0, l = deltaImageData.length; i < l; i+=4){
+    var r = deltaImageData[i];
+    var g = deltaImageData[i + 1];
+    var b = deltaImageData[i + 2];
     // Ignore the alpha channel
     var color = (0 << 24 | r << 16 | g << 8 | b);
     var foundIndex = colorsHash[color];
@@ -202,7 +212,7 @@ function run(data) {
   // This is the "traditional" animatied gif style of going from RGBA to
   // indexed color frames via sampling
 
-  var rgbComponents = dataToRGB(imageData, width, height);
+  var rgbComponents = dataToRGB(deltaImageData, delta.width, delta.height);
   var nq = new NeuQuant(rgbComponents, rgbComponents.length, sampleInterval || 10);
   var paletteRGB = nq.process();
   var paletteArray = componentizedPaletteToArray(paletteRGB);
