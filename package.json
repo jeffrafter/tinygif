@@ -1,8 +1,8 @@
 {
   "name": "tinygif",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
-  "main": "dist/tinygif.js",
+  "main": "tinygif.js",
   "directories": {
     "example": "example",
     "lib": "lib",
