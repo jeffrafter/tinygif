@@ -1,7 +1,7 @@
 module.exports = {
   entry: "./src/index.js",
   output: {
-    filename: "dist/tinygif.js"
+    filename: "tinygif.js"
   },
   module: {
     loaders: [
