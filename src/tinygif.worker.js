@@ -93,15 +93,11 @@ function dirtyRect(previousData, imageData, width, height) {
   return {
     x: left,
     y: top,
-    width: right - left,
-    height: bottom - top
+    width: (right - left) + 1,
+    height: (bottom - top) + 1
   }
 }
 
-// TODO
-//   - determine the delta region if there is a previous frame
-//   - if there is no delta, bump the delay of the previous frame
-//   - check if the colors < 256 && available in the global palette
 function run(data) {
   var frame = data.frame;
   var previous = data.previous;
@@ -122,18 +118,14 @@ function run(data) {
     }
   }
 
-  var readType = (obj) => {
-    return Object.prototype.toString.call(obj)
-  }
-
+  // Grab only the changed portion and work with that
   var deltaImageData = new Uint8ClampedArray(delta.width * delta.height * 4)
   var deltaIndex = 0;
   for (var y = delta.y; y < delta.y + delta.height; y++) {
     var start = (y * width * 4) + (delta.x * 4);
-    var end = (y * width * 4) + (delta.x * 4) + (delta.width * 4);
-    var chunk = imageData.slice(start, end)
-    for (var i = 0; i < chunk.length; i++) {
-      deltaImageData[deltaIndex++] = chunk[i];
+    var end = (y * width * 4) + (delta.x * 4) + (delta.width  * 4);
+    for (var i = start; i < end; i++) {
+      deltaImageData[deltaIndex++] = imageData[i];
     }
   }
 
@@ -174,7 +166,7 @@ function run(data) {
     }
 
     if (globalPaletteMatches) {
-      console.log("Using global palette")
+      // console.log("Using global palette")
       return {
         delta: delta,
         pixels: indexedPixels,
@@ -207,7 +199,7 @@ function run(data) {
   }
 
   if (colorsArray.length < 256) {
-    console.log("Using local colors array")
+    // console.log("Using local colors array")
     return {
       delta: delta,
       pixels: indexedPixels,
@@ -231,7 +223,7 @@ function run(data) {
     indexedPixels[i] = nq.map(r, g, b);
   }
 
-  console.log("Using quantizer")
+  // console.log("Using quantizer")
   return {
     delta: delta,
     pixels: indexedPixels,
