@@ -2,7 +2,7 @@
   "name": "tinygif",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
+  "main": "dist/tinygif.js",
   "directories": {
     "example": "example",
     "lib": "lib",
@@ -18,8 +18,8 @@
     "example": "node example/server/server.js"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Jeff Rafter",
+  "license": "MIT",
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",

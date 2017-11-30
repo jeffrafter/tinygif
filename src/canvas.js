@@ -27,7 +27,7 @@ window.onload = function() {
 
   // A video animation
   var video = function() {
-    context.fillStyle = "red";
+    context.fillStyle = "white";
     context.fillRect(0, 0, canvas.width, canvas.height);
 
     var draw = function(v) {
@@ -43,7 +43,6 @@ window.onload = function() {
       s.setAttribute('src', src)
       v.appendChild(s)
       v.addEventListener('play', function(){
-        console.log("Playing")
         draw(v);
       },false);
       v.play()
@@ -54,9 +53,6 @@ window.onload = function() {
     }
 
     var bunny = createVideo("https://tiny-packages.s3.amazonaws.com/dist/big-buck-bunny_trailer.webm")
-    //http://video.webmfiles.org/big-buck-bunny_trailer.webm
-    //https://tiny-packages.s3.amazonaws.com/dist/big-buck-bunny_trailer.webm
-    //https://tiny-packages.s3.amazonaws.com/dist/lapse.webm
   }
   video()
   //simple()
@@ -72,7 +68,6 @@ window.onload = function() {
       height: canvas.height,
       complete: function(blob) {
         console.log(blob.size)
-        console.log(window.perf)
         var img = document.createElement("img");
         img.src = URL.createObjectURL(blob);
         document.body.appendChild(img)

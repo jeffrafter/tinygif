@@ -16,7 +16,6 @@ import TinygifWorker from './tinygif.worker.js'
 export default function Tinygif(options) {
   'use strict';
 
-  console.log("Tinygif v1.0.1")
   options = options || {};
   var GifWriter = require('omggif').GifWriter;
   var callback = options.complete || function() {};
@@ -104,17 +103,19 @@ export default function Tinygif(options) {
       if (frame.skip) {
         previous.delay += frame.delay
       } else {
-        frame.pixels = data.pixels;
-        frame.palette = data.palette;
+        frame.pixels = data.pixels
+        frame.global = data.global
+        frame.palette = data.palette
         frame.x = data.delta.x
         frame.y = data.delta.y
         frame.width = data.delta.width
         frame.height = data.delta.height
 
         // Try to save the palette as the global palette if there is none
-        if (!palette) {
+        if (!palette || frame.global) {
           palette = frame.palette
           quantizer = frame.quantizer
+          frame.palette = null
         }
 
         // If it is the first frame, just use the global palette to save a frame

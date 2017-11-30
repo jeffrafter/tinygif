@@ -51,7 +51,6 @@ function dirtyRect(previousData, imageData, width, height) {
 
   // There is no delta, all pixels match
   if (top == -1) {
-    console.log("No delta")
     return null
   }
 
@@ -166,11 +165,11 @@ function run(data) {
     }
 
     if (globalPaletteMatches) {
-      // console.log("Using global palette")
       return {
         delta: delta,
         pixels: indexedPixels,
-        palette: null // use the global
+        global: true, // assign this to global palette
+        palette: palette
       };
     }
   }
@@ -199,7 +198,6 @@ function run(data) {
   }
 
   if (colorsArray.length < 256) {
-    // console.log("Using local colors array")
     return {
       delta: delta,
       pixels: indexedPixels,
@@ -223,7 +221,6 @@ function run(data) {
     indexedPixels[i] = nq.map(r, g, b);
   }
 
-  // console.log("Using quantizer")
   return {
     delta: delta,
     pixels: indexedPixels,

@@ -1,7 +1,7 @@
 module.exports = {
-  entry: "./src/canvas.js",
+  entry: "./src/index.js",
   output: {
-    filename: "example/bundle.js"
+    filename: "dist/tinygif.js"
   },
   module: {
     loaders: [
