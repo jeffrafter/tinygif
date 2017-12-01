@@ -1,8 +1,7 @@
 {
   "name": "tinygif",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
-  "main": "tinygif.js",
   "directories": {
     "example": "example",
     "lib": "lib",
