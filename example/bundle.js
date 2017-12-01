@@ -71,6 +71,7 @@
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__tinygif__ = __webpack_require__(1);
 
+console.log("STARTSSSSSSSSS")
 
 window.onload = function() {
   var recordingStatus = document.getElementById("recording_status");
@@ -115,7 +116,6 @@ window.onload = function() {
       s.setAttribute('src', src)
       v.appendChild(s)
       v.addEventListener('play', function(){
-        console.log("Playing")
         draw(v);
       },false);
       v.play()
@@ -126,9 +126,6 @@ window.onload = function() {
     }
 
     var bunny = createVideo("https://tiny-packages.s3.amazonaws.com/dist/big-buck-bunny_trailer.webm")
-    //http://video.webmfiles.org/big-buck-bunny_trailer.webm
-    //https://tiny-packages.s3.amazonaws.com/dist/big-buck-bunny_trailer.webm
-    //https://tiny-packages.s3.amazonaws.com/dist/lapse.webm
   }
   video()
   //simple()
@@ -187,8 +184,7 @@ window.onload = function() {
 
 "use strict";
 /* harmony export (immutable) */ __webpack_exports__["a"] = Tinygif;
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__tinygif_worker_js__ = __webpack_require__(2);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__tinygif_worker_js___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__tinygif_worker_js__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__worker__ = __webpack_require__(2);
 
 
 // Tinygif
@@ -207,7 +203,6 @@ window.onload = function() {
 function Tinygif(options) {
   'use strict';
 
-  console.log("Tinygif v1.0.1")
   options = options || {};
   var GifWriter = __webpack_require__(4).GifWriter;
   var callback = options.complete || function() {};
@@ -220,7 +215,7 @@ function Tinygif(options) {
   var sampleInterval = options.sampleInterval || 10; // smaller == more accurate, larger == faster
   var frames = [];
   var previous = null;
-  var worker = new __WEBPACK_IMPORTED_MODULE_0__tinygif_worker_js___default.a();
+  var worker = new __WEBPACK_IMPORTED_MODULE_0__worker__["a" /* default */]();
   var index = 0;
   var waiting = false;
   var capturing = false;
@@ -284,50 +279,40 @@ function Tinygif(options) {
     var frame = frames[index];
 
     // Prepare the worker for handling the processed data
-    worker.onmessage = function(message) {
-      var data = message.data;
+    var data = worker.run(frame, previous, palette, quantizer)
 
-      frame.processed = true;
-      frame.processing = false;
-      frame.skip = data.skip
+    frame.processed = true;
+    frame.processing = false;
+    frame.skip = data.skip
 
-      // If nothing has changed between frames, lets just skip this frame
-      if (frame.skip) {
-        previous.delay += frame.delay
-      } else {
-        frame.pixels = data.pixels
-        frame.global = data.global
-        frame.palette = data.palette
-        frame.x = data.delta.x
-        frame.y = data.delta.y
-        frame.width = data.delta.width
-        frame.height = data.delta.height
+    // If nothing has changed between frames, lets just skip this frame
+    if (frame.skip) {
+      previous.delay += frame.delay
+    } else {
+      frame.pixels = data.pixels
+      frame.global = data.global
+      frame.palette = data.palette
+      frame.x = data.delta.x
+      frame.y = data.delta.y
+      frame.width = data.delta.width
+      frame.height = data.delta.height
 
-        // Try to save the palette as the global palette if there is none
-        if (!palette || frame.global) {
-          palette = frame.palette
-          quantizer = frame.quantizer
-          frame.palette = null
-        }
-
-        // If it is the first frame, just use the global palette to save a frame
-        if (index == 0) frame.palette = null
-
-        // Delete previous data, and free memory
-        if (previous) delete(previous.data)
-        previous = frame
+      // Try to save the palette as the global palette if there is none
+      if (!palette || frame.global) {
+        palette = frame.palette
+        quantizer = frame.quantizer
+        frame.palette = null
       }
 
-      processed();
-    };
+      // If it is the first frame, just use the global palette to save a frame
+      if (index == 0) frame.palette = null
 
-    // TODO pass previous frame and globalPalette here
-    worker.postMessage({
-      frame: frame,
-      previous: previous,
-      palette: palette,
-      quantizer: quantizer
-    });
+      // Delete previous data, and free memory
+      if (previous) delete(previous.data)
+      previous = frame
+    }
+
+    processed();
   }
 
   // A frame was just processed, check for more work or finish
@@ -380,7 +365,6 @@ function Tinygif(options) {
 
     gifWriter.end();
     // Explicitly ask web workers to die so they are explicitly GC'ed
-    worker.terminate();
     var array = new Uint8Array(buffer);
     blob = new Blob([ array ], { type: 'image/gif' });
     frames = [];
@@ -401,54 +385,847 @@ function Tinygif(options) {
 
 /***/ }),
 /* 2 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
-module.exports = function() {
-  return __webpack_require__(3)("/******/ (function(modules) { // webpackBootstrap\n/******/ \t// The module cache\n/******/ \tvar installedModules = {};\n/******/\n/******/ \t// The require function\n/******/ \tfunction __webpack_require__(moduleId) {\n/******/\n/******/ \t\t// Check if module is in cache\n/******/ \t\tif(installedModules[moduleId]) {\n/******/ \t\t\treturn installedModules[moduleId].exports;\n/******/ \t\t}\n/******/ \t\t// Create a new module (and put it into the cache)\n/******/ \t\tvar module = installedModules[moduleId] = {\n/******/ \t\t\ti: moduleId,\n/******/ \t\t\tl: false,\n/******/ \t\t\texports: {}\n/******/ \t\t};\n/******/\n/******/ \t\t// Execute the module function\n/******/ \t\tmodules[moduleId].call(module.exports, module, module.exports, __webpack_require__);\n/******/\n/******/ \t\t// Flag the module as loaded\n/******/ \t\tmodule.l = true;\n/******/\n/******/ \t\t// Return the exports of the module\n/******/ \t\treturn module.exports;\n/******/ \t}\n/******/\n/******/\n/******/ \t// expose the modules object (__webpack_modules__)\n/******/ \t__webpack_require__.m = modules;\n/******/\n/******/ \t// expose the module cache\n/******/ \t__webpack_require__.c = installedModules;\n/******/\n/******/ \t// define getter function for harmony exports\n/******/ \t__webpack_require__.d = function(exports, name, getter) {\n/******/ \t\tif(!__webpack_require__.o(exports, name)) {\n/******/ \t\t\tObject.defineProperty(exports, name, {\n/******/ \t\t\t\tconfigurable: false,\n/******/ \t\t\t\tenumerable: true,\n/******/ \t\t\t\tget: getter\n/******/ \t\t\t});\n/******/ \t\t}\n/******/ \t};\n/******/\n/******/ \t// getDefaultExport function for compatibility with non-harmony modules\n/******/ \t__webpack_require__.n = function(module) {\n/******/ \t\tvar getter = module && module.__esModule ?\n/******/ \t\t\tfunction getDefault() { return module['default']; } :\n/******/ \t\t\tfunction getModuleExports() { return module; };\n/******/ \t\t__webpack_require__.d(getter, 'a', getter);\n/******/ \t\treturn getter;\n/******/ \t};\n/******/\n/******/ \t// Object.prototype.hasOwnProperty.call\n/******/ \t__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };\n/******/\n/******/ \t// __webpack_public_path__\n/******/ \t__webpack_require__.p = \"\";\n/******/\n/******/ \t// Load entry module and return exports\n/******/ \treturn __webpack_require__(__webpack_require__.s = 0);\n/******/ })\n/************************************************************************/\n/******/ ([\n/* 0 */\n/***/ (function(module, __webpack_exports__, __webpack_require__) {\n\n\"use strict\";\nObject.defineProperty(__webpack_exports__, \"__esModule\", { value: true });\n/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__NeuQuant__ = __webpack_require__(1);\n/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__NeuQuant___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__NeuQuant__);\n\n\nfunction dataToRGB(data, width, height) {\n  var i = 0;\n  var length = width * height * 4;\n  var rgb = [];\n\n  while(i < length) {\n    rgb.push( data[i++] );\n    rgb.push( data[i++] );\n    rgb.push( data[i++] );\n    i++; // for the alpha channel which we don't care about\n  }\n\n  return rgb;\n}\n\nfunction componentizedPaletteToArray(paletteRGB) {\n  var paletteArray = [];\n\n  for(var i = 0; i < paletteRGB.length; i += 3) {\n    var r = paletteRGB[ i ];\n    var g = paletteRGB[ i + 1 ];\n    var b = paletteRGB[ i + 2 ];\n    paletteArray.push(r << 16 | g << 8 | b);\n  }\n\n  return paletteArray;\n}\n\nfunction dirtyRect(previousData, imageData, width, height) {\n  var result = {\n    x: 0,\n    y: 0,\n    width: width,\n    height: height\n  }\n\n  if (!previousData) {\n    return result\n  }\n\n  var left = -1, right = -1, top = -1, bottom = -1;\n\n  for (var i = 0, l = previousData.length; i < l; i++) {\n    if (previousData[i] !== imageData[i]) {\n      top = Math.floor(i / (width * 4));\n      break\n    }\n  }\n\n  // There is no delta, all pixels match\n  if (top == -1) {\n    console.log(\"No delta\")\n    return null\n  }\n\n  for (var i = previousData.length - 1; i > -1; i--) {\n    if (previousData[i] !== imageData[i]) {\n      bottom = Math.floor(i / (width * 4));\n      break\n    }\n  }\n\n  for (var x = 0; x < (width * 4); x += 4) {\n    for (var y = 0; y < height; y++) {\n      var pos = (y * (width * 4)) + x;\n      if (previousData[pos] !== imageData[pos] ||\n        previousData[pos + 1] !== imageData[pos + 1] ||\n        previousData[pos + 2] !== imageData[pos + 2] ||\n        previousData[pos + 3] !== imageData[pos + 3]) {\n        left = x / 4;\n        break\n      }\n    }\n    if (left > -1) break;\n  }\n\n  for (var x = ((width - 1) * 4); x > -1; x -= 4) {\n    for (var y = 0; y < height; y++) {\n      var pos = (y * (width * 4)) + x;\n      if (previousData[pos] !== imageData[pos] ||\n        previousData[pos + 1] !== imageData[pos + 1] ||\n        previousData[pos + 2] !== imageData[pos + 2] ||\n        previousData[pos + 3] !== imageData[pos + 3]) {\n        right = x / 4;\n        break\n      }\n    }\n    if (right > -1) break;\n  }\n\n  return {\n    x: left,\n    y: top,\n    width: (right - left) + 1,\n    height: (bottom - top) + 1\n  }\n}\n\nfunction run(data) {\n  var frame = data.frame;\n  var previous = data.previous;\n  var palette = data.palette;\n  var quantizer = data.quantizer;\n\n  var previousData = previous ? previous.data : null;\n  var imageData = frame.data;\n  var width = frame.width;\n  var height = frame.height;\n  var sampleInterval = frame.sampleInterval;\n\n  // Find the delta\n  var delta = dirtyRect(previousData, imageData, width, height);\n  if (!delta) {\n    return {\n      skip: true\n    }\n  }\n\n  // Grab only the changed portion and work with that\n  var deltaImageData = new Uint8ClampedArray(delta.width * delta.height * 4)\n  var deltaIndex = 0;\n  for (var y = delta.y; y < delta.y + delta.height; y++) {\n    var start = (y * width * 4) + (delta.x * 4);\n    var end = (y * width * 4) + (delta.x * 4) + (delta.width  * 4);\n    for (var i = start; i < end; i++) {\n      deltaImageData[deltaIndex++] = imageData[i];\n    }\n  }\n\n  // Prepare an index array into the palette\n  var numberPixels = delta.width * delta.height;\n  var indexedPixels = new Uint8Array(numberPixels);\n  var pixel = 0\n  var colorsArray = [];\n  var colorsHash = {};\n\n  // If we can use the global palette directly let's do it... even if we have\n  // to add a couple more colors, unless it is a quantized palette because\n  // we would need to map the colors\n  if (palette && !quantizer) {\n    var globalPaletteMatches = true\n    // Build a quick lookup table, TODO... pass this around\n    for (var i = 0, l = palette.length; i < l; i++) {\n      colorsHash[palette[i]] = i;\n    }\n    for (var i = 0, l = deltaImageData.length; i < l; i+=4){\n      var r = deltaImageData[i];\n      var g = deltaImageData[i + 1];\n      var b = deltaImageData[i + 2];\n      // Ignore the alpha channel\n      var color = (0 << 24 | r << 16 | g << 8 | b);\n      var foundIndex = colorsHash[color];\n      // If we didn't find it on the global palette, is there room to add it?\n      if (foundIndex == null && palette.length == 255) {\n        globalPaletteMatches = false;\n        break;\n      }\n      if (foundIndex == null) {\n        palette.push(color);\n        foundIndex = palette.length - 1;\n        colorsHash[color] = foundIndex;\n      }\n      indexedPixels[pixel++] = foundIndex;\n    }\n\n    if (globalPaletteMatches) {\n      // console.log(\"Using global palette\")\n      return {\n        delta: delta,\n        pixels: indexedPixels,\n        global: true, // assign this to global palette\n        palette: palette\n      };\n    }\n  }\n\n  // We couldn't use the global palette, try to create a local palette instead\n  // Grabbing the unique colors and just using them is way more efficient, but\n  // it doesn't work for images > 256 colors; we'll be optimisitic about it\n  colorsArray = [];\n  colorsHash = {};\n  pixel = 0\n  for (var i = 0, l = deltaImageData.length; i < l; i+=4){\n    var r = deltaImageData[i];\n    var g = deltaImageData[i + 1];\n    var b = deltaImageData[i + 2];\n    // Ignore the alpha channel\n    var color = (0 << 24 | r << 16 | g << 8 | b);\n    var foundIndex = colorsHash[color];\n    if (foundIndex == null) {\n      colorsArray.push(color);\n      foundIndex = colorsArray.length - 1;\n      // If there are already too many colors, just bail on this approach\n      if (foundIndex >= 256) break;\n      colorsHash[color] = foundIndex;\n    }\n    indexedPixels[pixel++] = foundIndex;\n  }\n\n  if (colorsArray.length < 256) {\n    // console.log(\"Using local colors array\")\n    return {\n      delta: delta,\n      pixels: indexedPixels,\n      palette: colorsArray\n    };\n  }\n\n  // This is the \"traditional\" animatied gif style of going from RGBA to\n  // indexed color frames via sampling\n\n  var rgbComponents = dataToRGB(deltaImageData, delta.width, delta.height);\n  var nq = new __WEBPACK_IMPORTED_MODULE_0__NeuQuant___default.a(rgbComponents, rgbComponents.length, sampleInterval || 10);\n  var paletteRGB = nq.process();\n  var paletteArray = componentizedPaletteToArray(paletteRGB);\n\n  var k = 0;\n  for(var i = 0; i < numberPixels; i++) {\n    r = rgbComponents[k++];\n    g = rgbComponents[k++];\n    b = rgbComponents[k++];\n    indexedPixels[i] = nq.map(r, g, b);\n  }\n\n  // console.log(\"Using quantizer\")\n  return {\n    delta: delta,\n    pixels: indexedPixels,\n    palette: paletteArray,\n    quantizer: true\n  };\n}\n\nself.onmessage = function(message) {\n  var data = message.data;\n  var response = run(data);\n  postMessage(response);\n};\n\n\n/***/ }),\n/* 1 */\n/***/ (function(module, exports) {\n\n/*\n* NeuQuant Neural-Net Quantization Algorithm\n* ------------------------------------------\n*\n* Copyright (c) 1994 Anthony Dekker\n*\n* NEUQUANT Neural-Net quantization algorithm by Anthony Dekker, 1994. See\n* \"Kohonen neural networks for optimal colour quantization\" in \"Network:\n* Computation in Neural Systems\" Vol. 5 (1994) pp 351-367. for a discussion of\n* the algorithm.\n*\n* Any party obtaining a copy of these files from the author, directly or\n* indirectly, is granted, free of charge, a full and unrestricted irrevocable,\n* world-wide, paid up, royalty-free, nonexclusive right and license to deal in\n* this software and documentation files (the \"Software\"), including without\n* limitation the rights to use, copy, modify, merge, publish, distribute,\n* sublicense, and/or sell copies of the Software, and to permit persons who\n* receive copies from any such party to do so, with the only requirement being\n* that this copyright notice remain intact.\n*/\n\n/*\n* This class handles Neural-Net quantization algorithm\n* @author Kevin Weiner (original Java version - kweiner@fmsware.com)\n* @author Thibault Imbert (AS3 version - bytearray.org)\n* @version 0.1 AS3 implementation\n* @version 0.2 JS->AS3 \"translation\" by antimatter15\n* @version 0.3 JS clean up + using modern JS idioms by sole - http://soledadpenades.com\n* Also implement fix in color conversion described at http://stackoverflow.com/questions/16371712/neuquant-js-javascript-color-quantization-hidden-bug-in-js-conversion\n*/\n\nmodule.exports = function NeuQuant() {\n\n    var netsize = 256; // number of colours used\n\n    // four primes near 500 - assume no image has a length so large\n    // that it is divisible by all four primes\n    var prime1 = 499;\n    var prime2 = 491;\n    var prime3 = 487;\n    var prime4 = 503;\n\n    // minimum size for input image\n    var minpicturebytes = (3 * prime4);\n\n    // Network Definitions\n\n    var maxnetpos = (netsize - 1);\n    var netbiasshift = 4; // bias for colour values\n    var ncycles = 100; // no. of learning cycles\n\n    // defs for freq and bias\n    var intbiasshift = 16; // bias for fractions\n    var intbias = (1 << intbiasshift);\n    var gammashift = 10; // gamma = 1024\n    var gamma = (1 << gammashift);\n    var betashift = 10;\n    var beta = (intbias >> betashift); // beta = 1/1024\n    var betagamma = (intbias << (gammashift - betashift));\n\n    // defs for decreasing radius factor\n    // For 256 colors, radius starts at 32.0 biased by 6 bits\n    // and decreases by a factor of 1/30 each cycle\n    var initrad = (netsize >> 3);\n    var radiusbiasshift = 6;\n    var radiusbias = (1 << radiusbiasshift);\n    var initradius = (initrad * radiusbias);\n    var radiusdec = 30;\n\n    // defs for decreasing alpha factor\n    // Alpha starts at 1.0 biased by 10 bits\n    var alphabiasshift = 10;\n    var initalpha = (1 << alphabiasshift);\n    var alphadec;\n\n    // radbias and alpharadbias used for radpower calculation\n    var radbiasshift = 8;\n    var radbias = (1 << radbiasshift);\n    var alpharadbshift = (alphabiasshift + radbiasshift);\n    var alpharadbias = (1 << alpharadbshift);\n\n\n    // Input image\n    var thepicture;\n    // Height * Width * 3\n    var lengthcount;\n    // Sampling factor 1..30\n    var samplefac;\n\n    // The network itself\n    var network;\n    var netindex = [];\n\n    // for network lookup - really 256\n    var bias = [];\n\n    // bias and freq arrays for learning\n    var freq = [];\n    var radpower = [];\n\n    function NeuQuantConstructor(thepic, len, sample) {\n\n        var i;\n        var p;\n\n        thepicture = thepic;\n        lengthcount = len;\n        samplefac = sample;\n\n        network = new Array(netsize);\n\n        for (i = 0; i < netsize; i++) {\n            network[i] = new Array(4);\n            p = network[i];\n            p[0] = p[1] = p[2] = ((i << (netbiasshift + 8)) / netsize) | 0;\n            freq[i] = (intbias / netsize) | 0; // 1 / netsize\n            bias[i] = 0;\n        }\n\n    }\n\n    function colorMap() {\n        var map = [];\n        var index = new Array(netsize);\n        for (var i = 0; i < netsize; i++)\n            index[network[i][3]] = i;\n        var k = 0;\n        for (var l = 0; l < netsize; l++) {\n            var j = index[l];\n            map[k++] = (network[j][0]);\n            map[k++] = (network[j][1]);\n            map[k++] = (network[j][2]);\n        }\n        return map;\n    }\n\n    // Insertion sort of network and building of netindex[0..255]\n    // (to do after unbias)\n    function inxbuild() {\n        var i;\n        var j;\n        var smallpos;\n        var smallval;\n        var p;\n        var q;\n        var previouscol;\n        var startpos;\n\n        previouscol = 0;\n        startpos = 0;\n\n        for (i = 0; i < netsize; i++)\n        {\n\n            p = network[i];\n            smallpos = i;\n            smallval = p[1]; // index on g\n            // find smallest in i..netsize-1\n            for (j = i + 1; j < netsize; j++) {\n\n                q = network[j];\n\n                if (q[1] < smallval) { // index on g\n                    smallpos = j;\n                    smallval = q[1]; // index on g\n                }\n            }\n\n            q = network[smallpos];\n\n            // swap p (i) and q (smallpos) entries\n            if (i != smallpos) {\n                j = q[0];\n                q[0] = p[0];\n                p[0] = j;\n                j = q[1];\n                q[1] = p[1];\n                p[1] = j;\n                j = q[2];\n                q[2] = p[2];\n                p[2] = j;\n                j = q[3];\n                q[3] = p[3];\n                p[3] = j;\n            }\n\n            // smallval entry is now in position i\n            if (smallval != previouscol) {\n\n                netindex[previouscol] = (startpos + i) >> 1;\n\n                for (j = previouscol + 1; j < smallval; j++) {\n                    netindex[j] = i;\n                }\n\n                previouscol = smallval;\n                startpos = i;\n\n            }\n\n        }\n\n        netindex[previouscol] = (startpos + maxnetpos) >> 1;\n        for (j = previouscol + 1; j < 256; j++) {\n            netindex[j] = maxnetpos; // really 256\n        }\n\n    }\n\n\n    // Main Learning Loop\n\n    function learn() {\n        var i;\n        var j;\n        var b;\n        var g;\n        var r;\n        var radius;\n        var rad;\n        var alpha;\n        var step;\n        var delta;\n        var samplepixels;\n        var p;\n        var pix;\n        var lim;\n\n        if (lengthcount < minpicturebytes) {\n            samplefac = 1;\n        }\n\n        alphadec = 30 + ((samplefac - 1) / 3);\n        p = thepicture;\n        pix = 0;\n        lim = lengthcount;\n        samplepixels = lengthcount / (3 * samplefac);\n        delta = (samplepixels / ncycles) | 0;\n        alpha = initalpha;\n        radius = initradius;\n\n        rad = radius >> radiusbiasshift;\n        if (rad <= 1) {\n            rad = 0;\n        }\n\n        for (i = 0; i < rad; i++) {\n            radpower[i] = alpha * (((rad * rad - i * i) * radbias) / (rad * rad));\n        }\n\n\n        if (lengthcount < minpicturebytes) {\n            step = 3;\n        } else if ((lengthcount % prime1) !== 0) {\n            step = 3 * prime1;\n        } else {\n\n            if ((lengthcount % prime2) !== 0) {\n                step = 3 * prime2;\n            } else {\n                if ((lengthcount % prime3) !== 0) {\n                    step = 3 * prime3;\n                } else {\n                    step = 3 * prime4;\n                }\n            }\n\n        }\n\n        i = 0;\n\n        while (i < samplepixels) {\n\n            b = (p[pix + 0] & 0xff) << netbiasshift;\n            g = (p[pix + 1] & 0xff) << netbiasshift;\n            r = (p[pix + 2] & 0xff) << netbiasshift;\n            j = contest(b, g, r);\n\n            altersingle(alpha, j, b, g, r);\n\n            if (rad !== 0) {\n                // Alter neighbours\n                alterneigh(rad, j, b, g, r);\n            }\n\n            pix += step;\n\n            if (pix >= lim) {\n                pix -= lengthcount;\n            }\n\n            i++;\n\n            if (delta === 0) {\n                delta = 1;\n            }\n\n            if (i % delta === 0) {\n                alpha -= alpha / alphadec;\n                radius -= radius / radiusdec;\n                rad = radius >> radiusbiasshift;\n\n                if (rad <= 1) {\n                    rad = 0;\n                }\n\n                for (j = 0; j < rad; j++) {\n                    radpower[j] = alpha * (((rad * rad - j * j) * radbias) / (rad * rad));\n                }\n\n            }\n\n        }\n\n    }\n\n    // Search for BGR values 0..255 (after net is unbiased) and return colour index\n    function map(b, g, r) {\n        var i;\n        var j;\n        var dist;\n        var a;\n        var bestd;\n        var p;\n        var best;\n\n        // Biggest possible distance is 256 * 3\n        bestd = 1000;\n        best = -1;\n        i = netindex[g]; // index on g\n        j = i - 1; // start at netindex[g] and work outwards\n\n        while ((i < netsize) || (j >= 0)) {\n\n            if (i < netsize) {\n\n                p = network[i];\n\n                dist = p[1] - g; // inx key\n\n                if (dist >= bestd) {\n                    i = netsize; // stop iter\n                } else {\n\n                    i++;\n\n                    if (dist < 0) {\n                        dist = -dist;\n                    }\n\n                    a = p[0] - b;\n\n                    if (a < 0) {\n                        a = -a;\n                    }\n\n                    dist += a;\n\n                    if (dist < bestd) {\n                        a = p[2] - r;\n\n                        if (a < 0) {\n                            a = -a;\n                        }\n\n                        dist += a;\n\n                        if (dist < bestd) {\n                            bestd = dist;\n                            best = p[3];\n                        }\n                    }\n\n                }\n\n            }\n\n            if (j >= 0) {\n\n                p = network[j];\n\n                dist = g - p[1]; // inx key - reverse dif\n\n                if (dist >= bestd) {\n                    j = -1; // stop iter\n                } else {\n\n                    j--;\n                    if (dist < 0) {\n                        dist = -dist;\n                    }\n                    a = p[0] - b;\n                    if (a < 0) {\n                        a = -a;\n                    }\n                    dist += a;\n\n                    if (dist < bestd) {\n                        a = p[2] - r;\n                        if (a < 0) {\n                            a = -a;\n                        }\n                        dist += a;\n                        if (dist < bestd) {\n                            bestd = dist;\n                            best = p[3];\n                        }\n                    }\n\n                }\n\n            }\n\n        }\n\n        return (best);\n\n    }\n\n    function process() {\n        learn();\n        unbiasnet();\n        inxbuild();\n        return colorMap();\n    }\n\n    // Unbias network to give byte values 0..255 and record position i\n    // to prepare for sort\n    function unbiasnet() {\n        var i;\n        var j;\n\n        for (i = 0; i < netsize; i++) {\n            network[i][0] >>= netbiasshift;\n            network[i][1] >>= netbiasshift;\n            network[i][2] >>= netbiasshift;\n            network[i][3] = i; // record colour no\n        }\n    }\n\n    // Move adjacent neurons by precomputed alpha*(1-((i-j)^2/[r]^2))\n    // in radpower[|i-j|]\n    function alterneigh(rad, i, b, g, r) {\n\n        var j;\n        var k;\n        var lo;\n        var hi;\n        var a;\n        var m;\n\n        var p;\n\n        lo = i - rad;\n        if (lo < -1) {\n            lo = -1;\n        }\n\n        hi = i + rad;\n\n        if (hi > netsize) {\n            hi = netsize;\n        }\n\n        j = i + 1;\n        k = i - 1;\n        m = 1;\n\n        while ((j < hi) || (k > lo)) {\n\n            a = radpower[m++];\n\n            if (j < hi) {\n\n                p = network[j++];\n\n                try {\n\n                    p[0] -= ((a * (p[0] - b)) / alpharadbias) | 0;\n                    p[1] -= ((a * (p[1] - g)) / alpharadbias) | 0;\n                    p[2] -= ((a * (p[2] - r)) / alpharadbias) | 0;\n\n                } catch (e) {}\n\n            }\n\n            if (k > lo) {\n\n                p = network[k--];\n\n                try {\n\n                    p[0] -= ((a * (p[0] - b)) / alpharadbias) | 0;\n                    p[1] -= ((a * (p[1] - g)) / alpharadbias) | 0;\n                    p[2] -= ((a * (p[2] - r)) / alpharadbias) | 0;\n\n                } catch (e) {}\n\n            }\n\n        }\n\n    }\n\n\n    // Move neuron i towards biased (b,g,r) by factor alpha\n    function altersingle(alpha, i, b, g, r) {\n\n        // alter hit neuron\n        var n = network[i];\n        var alphaMult = alpha / initalpha;\n        n[0] -= ((alphaMult * (n[0] - b))) | 0;\n        n[1] -= ((alphaMult * (n[1] - g))) | 0;\n        n[2] -= ((alphaMult * (n[2] - r))) | 0;\n\n    }\n\n    // Search for biased BGR values\n    function contest(b, g, r) {\n\n        // finds closest neuron (min dist) and updates freq\n        // finds best neuron (min dist-bias) and returns position\n        // for frequently chosen neurons, freq[i] is high and bias[i] is negative\n        // bias[i] = gamma*((1/netsize)-freq[i])\n\n        var i;\n        var dist;\n        var a;\n        var biasdist;\n        var betafreq;\n        var bestpos;\n        var bestbiaspos;\n        var bestd;\n        var bestbiasd;\n        var n;\n\n        bestd = ~(1 << 31);\n        bestbiasd = bestd;\n        bestpos = -1;\n        bestbiaspos = bestpos;\n\n        for (i = 0; i < netsize; i++) {\n\n            n = network[i];\n            dist = n[0] - b;\n\n            if (dist < 0) {\n                dist = -dist;\n            }\n\n            a = n[1] - g;\n\n            if (a < 0) {\n                a = -a;\n            }\n\n            dist += a;\n\n            a = n[2] - r;\n\n            if (a < 0) {\n                a = -a;\n            }\n\n            dist += a;\n\n            if (dist < bestd) {\n                bestd = dist;\n                bestpos = i;\n            }\n\n            biasdist = dist - ((bias[i]) >> (intbiasshift - netbiasshift));\n\n            if (biasdist < bestbiasd) {\n                bestbiasd = biasdist;\n                bestbiaspos = i;\n            }\n\n            betafreq = (freq[i] >> betashift);\n            freq[i] -= betafreq;\n            bias[i] += (betafreq << gammashift);\n\n        }\n\n        freq[bestpos] += beta;\n        bias[bestpos] -= betagamma;\n        return (bestbiaspos);\n\n    }\n\n    NeuQuantConstructor.apply(this, arguments);\n\n    var exports = {};\n    exports.map = map;\n    exports.process = process;\n\n    return exports;\n}\n\n\n/***/ })\n/******/ ]);", __webpack_require__.p + "6acfa3394f6605df43da.worker.js");
-};
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__NeuQuant__ = __webpack_require__(3);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__NeuQuant___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__NeuQuant__);
+
+
+class TinygifWorker {
+  dataToRGB(data, width, height) {
+    var i = 0;
+    var length = width * height * 4;
+    var rgb = [];
+
+    while(i < length) {
+      rgb.push( data[i++] );
+      rgb.push( data[i++] );
+      rgb.push( data[i++] );
+      i++; // for the alpha channel which we don't care about
+    }
+
+    return rgb;
+  }
+
+  componentizedPaletteToArray(paletteRGB) {
+    var paletteArray = [];
+
+    for(var i = 0; i < paletteRGB.length; i += 3) {
+      var r = paletteRGB[ i ];
+      var g = paletteRGB[ i + 1 ];
+      var b = paletteRGB[ i + 2 ];
+      paletteArray.push(r << 16 | g << 8 | b);
+    }
+
+    return paletteArray;
+  }
+
+  dirtyRect(previousData, imageData, width, height) {
+    var result = {
+      x: 0,
+      y: 0,
+      width: width,
+      height: height
+    }
+
+    if (!previousData) {
+      return result
+    }
+
+    var left = -1, right = -1, top = -1, bottom = -1;
+
+    for (var i = 0, l = previousData.length; i < l; i++) {
+      if (previousData[i] !== imageData[i]) {
+        top = Math.floor(i / (width * 4));
+        break
+      }
+    }
+
+    // There is no delta, all pixels match
+    if (top == -1) {
+      return null
+    }
+
+    for (var i = previousData.length - 1; i > -1; i--) {
+      if (previousData[i] !== imageData[i]) {
+        bottom = Math.floor(i / (width * 4));
+        break
+      }
+    }
+
+    for (var x = 0; x < (width * 4); x += 4) {
+      for (var y = 0; y < height; y++) {
+        var pos = (y * (width * 4)) + x;
+        if (previousData[pos] !== imageData[pos] ||
+          previousData[pos + 1] !== imageData[pos + 1] ||
+          previousData[pos + 2] !== imageData[pos + 2] ||
+          previousData[pos + 3] !== imageData[pos + 3]) {
+          left = x / 4;
+          break
+        }
+      }
+      if (left > -1) break;
+    }
+
+    for (var x = ((width - 1) * 4); x > -1; x -= 4) {
+      for (var y = 0; y < height; y++) {
+        var pos = (y * (width * 4)) + x;
+        if (previousData[pos] !== imageData[pos] ||
+          previousData[pos + 1] !== imageData[pos + 1] ||
+          previousData[pos + 2] !== imageData[pos + 2] ||
+          previousData[pos + 3] !== imageData[pos + 3]) {
+          right = x / 4;
+          break
+        }
+      }
+      if (right > -1) break;
+    }
+
+    return {
+      x: left,
+      y: top,
+      width: (right - left) + 1,
+      height: (bottom - top) + 1
+    }
+  }
+
+  run(frame, previous, palette, quantizer) {
+    var previousData = previous ? previous.data : null;
+    var imageData = frame.data;
+    var width = frame.width;
+    var height = frame.height;
+    var sampleInterval = frame.sampleInterval;
+
+    // Find the delta
+    var delta = this.dirtyRect(previousData, imageData, width, height);
+    if (!delta) {
+      return {
+        skip: true
+      }
+    }
+
+    // Grab only the changed portion and work with that
+    var deltaImageData = new Uint8ClampedArray(delta.width * delta.height * 4)
+    var deltaIndex = 0;
+    for (var y = delta.y; y < delta.y + delta.height; y++) {
+      var start = (y * width * 4) + (delta.x * 4);
+      var end = (y * width * 4) + (delta.x * 4) + (delta.width  * 4);
+      for (var i = start; i < end; i++) {
+        deltaImageData[deltaIndex++] = imageData[i];
+      }
+    }
+
+    // Prepare an index array into the palette
+    var numberPixels = delta.width * delta.height;
+    var indexedPixels = new Uint8Array(numberPixels);
+    var pixel = 0
+    var colorsArray = [];
+    var colorsHash = {};
+
+    // If we can use the global palette directly let's do it... even if we have
+    // to add a couple more colors, unless it is a quantized palette because
+    // we would need to map the colors
+    if (palette && !quantizer) {
+      var globalPaletteMatches = true
+      // Build a quick lookup table, TODO... pass this around
+      for (var i = 0, l = palette.length; i < l; i++) {
+        colorsHash[palette[i]] = i;
+      }
+      for (var i = 0, l = deltaImageData.length; i < l; i+=4){
+        var r = deltaImageData[i];
+        var g = deltaImageData[i + 1];
+        var b = deltaImageData[i + 2];
+        // Ignore the alpha channel
+        var color = (0 << 24 | r << 16 | g << 8 | b);
+        var foundIndex = colorsHash[color];
+        // If we didn't find it on the global palette, is there room to add it?
+        if (foundIndex == null && palette.length == 255) {
+          globalPaletteMatches = false;
+          break;
+        }
+        if (foundIndex == null) {
+          palette.push(color);
+          foundIndex = palette.length - 1;
+          colorsHash[color] = foundIndex;
+        }
+        indexedPixels[pixel++] = foundIndex;
+      }
+
+      if (globalPaletteMatches) {
+        return {
+          delta: delta,
+          pixels: indexedPixels,
+          global: true, // assign this to global palette
+          palette: palette
+        };
+      }
+    }
+
+    // We couldn't use the global palette, try to create a local palette instead
+    // Grabbing the unique colors and just using them is way more efficient, but
+    // it doesn't work for images > 256 colors; we'll be optimisitic about it
+    colorsArray = [];
+    colorsHash = {};
+    pixel = 0
+    for (var i = 0, l = deltaImageData.length; i < l; i+=4){
+      var r = deltaImageData[i];
+      var g = deltaImageData[i + 1];
+      var b = deltaImageData[i + 2];
+      // Ignore the alpha channel
+      var color = (0 << 24 | r << 16 | g << 8 | b);
+      var foundIndex = colorsHash[color];
+      if (foundIndex == null) {
+        colorsArray.push(color);
+        foundIndex = colorsArray.length - 1;
+        // If there are already too many colors, just bail on this approach
+        if (foundIndex >= 256) break;
+        colorsHash[color] = foundIndex;
+      }
+      indexedPixels[pixel++] = foundIndex;
+    }
+
+    if (colorsArray.length < 256) {
+      return {
+        delta: delta,
+        pixels: indexedPixels,
+        palette: colorsArray
+      };
+    }
+
+    // This is the "traditional" animatied gif style of going from RGBA to
+    // indexed color frames via sampling
+
+    // TODO: optimize this out, save 12%
+    var rgbComponents = this.dataToRGB(deltaImageData, delta.width, delta.height);
+    // TODO: learning and process is the slowest part
+    var nq = new __WEBPACK_IMPORTED_MODULE_0__NeuQuant___default.a(rgbComponents, rgbComponents.length, sampleInterval || 10);
+    var paletteRGB = nq.process();
+    var paletteArray = this.componentizedPaletteToArray(paletteRGB);
+
+    var k = 0;
+    for(var i = 0; i < numberPixels; i++) {
+      r = rgbComponents[k++];
+      g = rgbComponents[k++];
+      b = rgbComponents[k++];
+      indexedPixels[i] = nq.map(r, g, b);
+    }
+
+    return {
+      delta: delta,
+      pixels: indexedPixels,
+      palette: paletteArray,
+      quantizer: true
+    };
+  }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = TinygifWorker;
+
+
 
 /***/ }),
 /* 3 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, exports) {
 
-"use strict";
+/*
+* NeuQuant Neural-Net Quantization Algorithm
+* ------------------------------------------
+*
+* Copyright (c) 1994 Anthony Dekker
+*
+* NEUQUANT Neural-Net quantization algorithm by Anthony Dekker, 1994. See
+* "Kohonen neural networks for optimal colour quantization" in "Network:
+* Computation in Neural Systems" Vol. 5 (1994) pp 351-367. for a discussion of
+* the algorithm.
+*
+* Any party obtaining a copy of these files from the author, directly or
+* indirectly, is granted, free of charge, a full and unrestricted irrevocable,
+* world-wide, paid up, royalty-free, nonexclusive right and license to deal in
+* this software and documentation files (the "Software"), including without
+* limitation the rights to use, copy, modify, merge, publish, distribute,
+* sublicense, and/or sell copies of the Software, and to permit persons who
+* receive copies from any such party to do so, with the only requirement being
+* that this copyright notice remain intact.
+*/
+
+/*
+* This class handles Neural-Net quantization algorithm
+* @author Kevin Weiner (original Java version - kweiner@fmsware.com)
+* @author Thibault Imbert (AS3 version - bytearray.org)
+* @version 0.1 AS3 implementation
+* @version 0.2 JS->AS3 "translation" by antimatter15
+* @version 0.3 JS clean up + using modern JS idioms by sole - http://soledadpenades.com
+* Also implement fix in color conversion described at http://stackoverflow.com/questions/16371712/neuquant-js-javascript-color-quantization-hidden-bug-in-js-conversion
+*/
+
+module.exports = function NeuQuant() {
+
+    var netsize = 256; // number of colours used
+
+    // four primes near 500 - assume no image has a length so large
+    // that it is divisible by all four primes
+    var prime1 = 499;
+    var prime2 = 491;
+    var prime3 = 487;
+    var prime4 = 503;
+
+    // minimum size for input image
+    var minpicturebytes = (3 * prime4);
+
+    // Network Definitions
+
+    var maxnetpos = (netsize - 1);
+    var netbiasshift = 4; // bias for colour values
+    var ncycles = 100; // no. of learning cycles
+
+    // defs for freq and bias
+    var intbiasshift = 16; // bias for fractions
+    var intbias = (1 << intbiasshift);
+    var gammashift = 10; // gamma = 1024
+    var gamma = (1 << gammashift);
+    var betashift = 10;
+    var beta = (intbias >> betashift); // beta = 1/1024
+    var betagamma = (intbias << (gammashift - betashift));
+
+    // defs for decreasing radius factor
+    // For 256 colors, radius starts at 32.0 biased by 6 bits
+    // and decreases by a factor of 1/30 each cycle
+    var initrad = (netsize >> 3);
+    var radiusbiasshift = 6;
+    var radiusbias = (1 << radiusbiasshift);
+    var initradius = (initrad * radiusbias);
+    var radiusdec = 30;
+
+    // defs for decreasing alpha factor
+    // Alpha starts at 1.0 biased by 10 bits
+    var alphabiasshift = 10;
+    var initalpha = (1 << alphabiasshift);
+    var alphadec;
+
+    // radbias and alpharadbias used for radpower calculation
+    var radbiasshift = 8;
+    var radbias = (1 << radbiasshift);
+    var alpharadbshift = (alphabiasshift + radbiasshift);
+    var alpharadbias = (1 << alpharadbshift);
 
 
-// http://stackoverflow.com/questions/10343913/how-to-create-a-web-worker-from-a-string
+    // Input image
+    var thepicture;
+    // Height * Width * 3
+    var lengthcount;
+    // Sampling factor 1..30
+    var samplefac;
 
-var URL = window.URL || window.webkitURL;
+    // The network itself
+    var network;
+    var netindex = [];
 
-module.exports = function (content, url) {
-  try {
-    try {
-      var blob;
+    // for network lookup - really 256
+    var bias = [];
 
-      try {
-        // BlobBuilder = Deprecated, but widely implemented
-        var BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder || window.MSBlobBuilder;
+    // bias and freq arrays for learning
+    var freq = [];
+    var radpower = [];
 
-        blob = new BlobBuilder();
+    function NeuQuantConstructor(thepic, len, sample) {
 
-        blob.append(content);
+        var i;
+        var p;
 
-        blob = blob.getBlob();
-      } catch (e) {
-        // The proposed API
-        blob = new Blob([content]);
-      }
+        thepicture = thepic;
+        lengthcount = len;
+        samplefac = sample;
 
-      return new Worker(URL.createObjectURL(blob));
-    } catch (e) {
-      return new Worker('data:application/javascript,' + encodeURIComponent(content));
+        network = new Array(netsize);
+
+        for (i = 0; i < netsize; i++) {
+            network[i] = new Array(4);
+            p = network[i];
+            p[0] = p[1] = p[2] = ((i << (netbiasshift + 8)) / netsize) | 0;
+            freq[i] = (intbias / netsize) | 0; // 1 / netsize
+            bias[i] = 0;
+        }
+
     }
-  } catch (e) {
-    if (!url) {
-      throw Error('Inline worker is not supported');
+
+    function colorMap() {
+        var map = [];
+        var index = new Array(netsize);
+        for (var i = 0; i < netsize; i++)
+            index[network[i][3]] = i;
+        var k = 0;
+        for (var l = 0; l < netsize; l++) {
+            var j = index[l];
+            map[k++] = (network[j][0]);
+            map[k++] = (network[j][1]);
+            map[k++] = (network[j][2]);
+        }
+        return map;
     }
 
-    return new Worker(url);
-  }
-};
+    // Insertion sort of network and building of netindex[0..255]
+    // (to do after unbias)
+    function inxbuild() {
+        var i;
+        var j;
+        var smallpos;
+        var smallval;
+        var p;
+        var q;
+        var previouscol;
+        var startpos;
+
+        previouscol = 0;
+        startpos = 0;
+
+        for (i = 0; i < netsize; i++)
+        {
+
+            p = network[i];
+            smallpos = i;
+            smallval = p[1]; // index on g
+            // find smallest in i..netsize-1
+            for (j = i + 1; j < netsize; j++) {
+
+                q = network[j];
+
+                if (q[1] < smallval) { // index on g
+                    smallpos = j;
+                    smallval = q[1]; // index on g
+                }
+            }
+
+            q = network[smallpos];
+
+            // swap p (i) and q (smallpos) entries
+            if (i != smallpos) {
+                j = q[0];
+                q[0] = p[0];
+                p[0] = j;
+                j = q[1];
+                q[1] = p[1];
+                p[1] = j;
+                j = q[2];
+                q[2] = p[2];
+                p[2] = j;
+                j = q[3];
+                q[3] = p[3];
+                p[3] = j;
+            }
+
+            // smallval entry is now in position i
+            if (smallval != previouscol) {
+
+                netindex[previouscol] = (startpos + i) >> 1;
+
+                for (j = previouscol + 1; j < smallval; j++) {
+                    netindex[j] = i;
+                }
+
+                previouscol = smallval;
+                startpos = i;
+
+            }
+
+        }
+
+        netindex[previouscol] = (startpos + maxnetpos) >> 1;
+        for (j = previouscol + 1; j < 256; j++) {
+            netindex[j] = maxnetpos; // really 256
+        }
+
+    }
+
+
+    // Main Learning Loop
+
+    function learn() {
+        var i;
+        var j;
+        var b;
+        var g;
+        var r;
+        var radius;
+        var rad;
+        var alpha;
+        var step;
+        var delta;
+        var samplepixels;
+        var p;
+        var pix;
+        var lim;
+
+        if (lengthcount < minpicturebytes) {
+            samplefac = 1;
+        }
+
+        alphadec = 30 + ((samplefac - 1) / 3);
+        p = thepicture;
+        pix = 0;
+        lim = lengthcount;
+        samplepixels = lengthcount / (3 * samplefac);
+        delta = (samplepixels / ncycles) | 0;
+        alpha = initalpha;
+        radius = initradius;
+
+        rad = radius >> radiusbiasshift;
+        if (rad <= 1) {
+            rad = 0;
+        }
+
+        for (i = 0; i < rad; i++) {
+            radpower[i] = alpha * (((rad * rad - i * i) * radbias) / (rad * rad));
+        }
+
+
+        if (lengthcount < minpicturebytes) {
+            step = 3;
+        } else if ((lengthcount % prime1) !== 0) {
+            step = 3 * prime1;
+        } else {
+
+            if ((lengthcount % prime2) !== 0) {
+                step = 3 * prime2;
+            } else {
+                if ((lengthcount % prime3) !== 0) {
+                    step = 3 * prime3;
+                } else {
+                    step = 3 * prime4;
+                }
+            }
+
+        }
+
+        i = 0;
+
+        while (i < samplepixels) {
+
+            b = (p[pix + 0] & 0xff) << netbiasshift;
+            g = (p[pix + 1] & 0xff) << netbiasshift;
+            r = (p[pix + 2] & 0xff) << netbiasshift;
+            j = contest(b, g, r);
+
+            altersingle(alpha, j, b, g, r);
+
+            if (rad !== 0) {
+                // Alter neighbours
+                alterneigh(rad, j, b, g, r);
+            }
+
+            pix += step;
+
+            if (pix >= lim) {
+                pix -= lengthcount;
+            }
+
+            i++;
+
+            if (delta === 0) {
+                delta = 1;
+            }
+
+            if (i % delta === 0) {
+                alpha -= alpha / alphadec;
+                radius -= radius / radiusdec;
+                rad = radius >> radiusbiasshift;
+
+                if (rad <= 1) {
+                    rad = 0;
+                }
+
+                for (j = 0; j < rad; j++) {
+                    radpower[j] = alpha * (((rad * rad - j * j) * radbias) / (rad * rad));
+                }
+
+            }
+
+        }
+
+    }
+
+    // Search for BGR values 0..255 (after net is unbiased) and return colour index
+    function map(b, g, r) {
+        var i;
+        var j;
+        var dist;
+        var a;
+        var bestd;
+        var p;
+        var best;
+
+        // Biggest possible distance is 256 * 3
+        bestd = 1000;
+        best = -1;
+        i = netindex[g]; // index on g
+        j = i - 1; // start at netindex[g] and work outwards
+
+        while ((i < netsize) || (j >= 0)) {
+
+            if (i < netsize) {
+
+                p = network[i];
+
+                dist = p[1] - g; // inx key
+
+                if (dist >= bestd) {
+                    i = netsize; // stop iter
+                } else {
+
+                    i++;
+
+                    if (dist < 0) {
+                        dist = -dist;
+                    }
+
+                    a = p[0] - b;
+
+                    if (a < 0) {
+                        a = -a;
+                    }
+
+                    dist += a;
+
+                    if (dist < bestd) {
+                        a = p[2] - r;
+
+                        if (a < 0) {
+                            a = -a;
+                        }
+
+                        dist += a;
+
+                        if (dist < bestd) {
+                            bestd = dist;
+                            best = p[3];
+                        }
+                    }
+
+                }
+
+            }
+
+            if (j >= 0) {
+
+                p = network[j];
+
+                dist = g - p[1]; // inx key - reverse dif
+
+                if (dist >= bestd) {
+                    j = -1; // stop iter
+                } else {
+
+                    j--;
+                    if (dist < 0) {
+                        dist = -dist;
+                    }
+                    a = p[0] - b;
+                    if (a < 0) {
+                        a = -a;
+                    }
+                    dist += a;
+
+                    if (dist < bestd) {
+                        a = p[2] - r;
+                        if (a < 0) {
+                            a = -a;
+                        }
+                        dist += a;
+                        if (dist < bestd) {
+                            bestd = dist;
+                            best = p[3];
+                        }
+                    }
+
+                }
+
+            }
+
+        }
+
+        return (best);
+
+    }
+
+    function process() {
+        learn();
+        unbiasnet();
+        inxbuild();
+        return colorMap();
+    }
+
+    // Unbias network to give byte values 0..255 and record position i
+    // to prepare for sort
+    function unbiasnet() {
+        var i;
+        var j;
+
+        for (i = 0; i < netsize; i++) {
+            network[i][0] >>= netbiasshift;
+            network[i][1] >>= netbiasshift;
+            network[i][2] >>= netbiasshift;
+            network[i][3] = i; // record colour no
+        }
+    }
+
+    // Move adjacent neurons by precomputed alpha*(1-((i-j)^2/[r]^2))
+    // in radpower[|i-j|]
+    function alterneigh(rad, i, b, g, r) {
+
+        var j;
+        var k;
+        var lo;
+        var hi;
+        var a;
+        var m;
+
+        var p;
+
+        lo = i - rad;
+        if (lo < -1) {
+            lo = -1;
+        }
+
+        hi = i + rad;
+
+        if (hi > netsize) {
+            hi = netsize;
+        }
+
+        j = i + 1;
+        k = i - 1;
+        m = 1;
+
+        while ((j < hi) || (k > lo)) {
+
+            a = radpower[m++];
+
+            if (j < hi) {
+
+                p = network[j++];
+
+                try {
+
+                    p[0] -= ((a * (p[0] - b)) / alpharadbias) | 0;
+                    p[1] -= ((a * (p[1] - g)) / alpharadbias) | 0;
+                    p[2] -= ((a * (p[2] - r)) / alpharadbias) | 0;
+
+                } catch (e) {}
+
+            }
+
+            if (k > lo) {
+
+                p = network[k--];
+
+                try {
+
+                    p[0] -= ((a * (p[0] - b)) / alpharadbias) | 0;
+                    p[1] -= ((a * (p[1] - g)) / alpharadbias) | 0;
+                    p[2] -= ((a * (p[2] - r)) / alpharadbias) | 0;
+
+                } catch (e) {}
+
+            }
+
+        }
+
+    }
+
+
+    // Move neuron i towards biased (b,g,r) by factor alpha
+    function altersingle(alpha, i, b, g, r) {
+
+        // alter hit neuron
+        var n = network[i];
+        var alphaMult = alpha / initalpha;
+        n[0] -= ((alphaMult * (n[0] - b))) | 0;
+        n[1] -= ((alphaMult * (n[1] - g))) | 0;
+        n[2] -= ((alphaMult * (n[2] - r))) | 0;
+
+    }
+
+    // Search for biased BGR values
+    function contest(b, g, r) {
+
+        // finds closest neuron (min dist) and updates freq
+        // finds best neuron (min dist-bias) and returns position
+        // for frequently chosen neurons, freq[i] is high and bias[i] is negative
+        // bias[i] = gamma*((1/netsize)-freq[i])
+
+        var i;
+        var dist;
+        var a;
+        var biasdist;
+        var betafreq;
+        var bestpos;
+        var bestbiaspos;
+        var bestd;
+        var bestbiasd;
+        var n;
+
+        bestd = ~(1 << 31);
+        bestbiasd = bestd;
+        bestpos = -1;
+        bestbiaspos = bestpos;
+
+        for (i = 0; i < netsize; i++) {
+
+            n = network[i];
+            dist = n[0] - b;
+
+            if (dist < 0) {
+                dist = -dist;
+            }
+
+            a = n[1] - g;
+
+            if (a < 0) {
+                a = -a;
+            }
+
+            dist += a;
+
+            a = n[2] - r;
+
+            if (a < 0) {
+                a = -a;
+            }
+
+            dist += a;
+
+            if (dist < bestd) {
+                bestd = dist;
+                bestpos = i;
+            }
+
+            biasdist = dist - ((bias[i]) >> (intbiasshift - netbiasshift));
+
+            if (biasdist < bestbiasd) {
+                bestbiasd = biasdist;
+                bestbiaspos = i;
+            }
+
+            betafreq = (freq[i] >> betashift);
+            freq[i] -= betafreq;
+            bias[i] += (betafreq << gammashift);
+
+        }
+
+        freq[bestpos] += beta;
+        bias[bestpos] -= betagamma;
+        return (bestbiaspos);
+
+    }
+
+    NeuQuantConstructor.apply(this, arguments);
+
+    var exports = {};
+    exports.map = map;
+    exports.process = process;
+
+    return exports;
+}
+
 
 /***/ }),
 /* 4 */

@@ -1,4 +1,4 @@
-import TinygifWorker from './tinygif.worker.js'
+import TinygifWorker from './worker'
 
 // Tinygif
 //
@@ -92,50 +92,40 @@ export default function Tinygif(options) {
     var frame = frames[index];
 
     // Prepare the worker for handling the processed data
-    worker.onmessage = function(message) {
-      var data = message.data;
+    var data = worker.run(frame, previous, palette, quantizer)
 
-      frame.processed = true;
-      frame.processing = false;
-      frame.skip = data.skip
+    frame.processed = true;
+    frame.processing = false;
+    frame.skip = data.skip
 
-      // If nothing has changed between frames, lets just skip this frame
-      if (frame.skip) {
-        previous.delay += frame.delay
-      } else {
-        frame.pixels = data.pixels
-        frame.global = data.global
-        frame.palette = data.palette
-        frame.x = data.delta.x
-        frame.y = data.delta.y
-        frame.width = data.delta.width
-        frame.height = data.delta.height
+    // If nothing has changed between frames, lets just skip this frame
+    if (frame.skip) {
+      previous.delay += frame.delay
+    } else {
+      frame.pixels = data.pixels
+      frame.global = data.global
+      frame.palette = data.palette
+      frame.x = data.delta.x
+      frame.y = data.delta.y
+      frame.width = data.delta.width
+      frame.height = data.delta.height
 
-        // Try to save the palette as the global palette if there is none
-        if (!palette || frame.global) {
-          palette = frame.palette
-          quantizer = frame.quantizer
-          frame.palette = null
-        }
-
-        // If it is the first frame, just use the global palette to save a frame
-        if (index == 0) frame.palette = null
-
-        // Delete previous data, and free memory
-        if (previous) delete(previous.data)
-        previous = frame
+      // Try to save the palette as the global palette if there is none
+      if (!palette || frame.global) {
+        palette = frame.palette
+        quantizer = frame.quantizer
+        frame.palette = null
       }
 
-      processed();
-    };
+      // If it is the first frame, just use the global palette to save a frame
+      if (index == 0) frame.palette = null
 
-    // TODO pass previous frame and globalPalette here
-    worker.postMessage({
-      frame: frame,
-      previous: previous,
-      palette: palette,
-      quantizer: quantizer
-    });
+      // Delete previous data, and free memory
+      if (previous) delete(previous.data)
+      previous = frame
+    }
+
+    processed();
   }
 
   // A frame was just processed, check for more work or finish
@@ -188,7 +178,6 @@ export default function Tinygif(options) {
 
     gifWriter.end();
     // Explicitly ask web workers to die so they are explicitly GC'ed
-    worker.terminate();
     var array = new Uint8Array(buffer);
     blob = new Blob([ array ], { type: 'image/gif' });
     frames = [];

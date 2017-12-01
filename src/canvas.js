@@ -1,4 +1,5 @@
 import Tinygif from "./tinygif"
+console.log("STARTSSSSSSSSS")
 
 window.onload = function() {
   var recordingStatus = document.getElementById("recording_status");
