@@ -1,7 +1,9 @@
 module.exports = {
   entry: "./src/index.js",
   output: {
-    filename: "index.js"
+    filename: "index.js",
+    library: "Tinygif",
+    libraryTarget: "umd"
   },
   module: {
     loaders: [
