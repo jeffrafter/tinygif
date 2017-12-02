@@ -164,28 +164,19 @@ class Tinygif {
     this.options = Object.assign({}, defaults, options)
   }
 
-  capture(recorder, canvas, count, start, last) {
-    let elapsed = Date.now() - start
-    let duration = Date.now() - last
-    let expected = elapsed / (1000 / this.options.fps)
+  capture(recorder, canvas, count, start) {
     let tick = 1000 / this.options.fps
-    let lag = expected - count
-    let skip = false
-    let delay = (tick * 2) - duration
+    let elapsed = Date.now() - start
+    console.log(elapsed, count)
 
-    console.log({elapsed: elapsed, count: count, expected: expected, dur: duration, delay: delay})
-
-    if (!skip) {
-      recorder.capture(canvas)
-    }
-    if (count >= this.options.fps * this.options.seconds) {
+    recorder.capture(canvas)
+    if (count >= this.options.fps * this.options.seconds ||
+      elapsed > (this.options.seconds * 1000)) {
       this.done = Date.now()
-      console.log("Done capturing")
       recorder.stop()
       return
     }
-    var d = Date.now()
-    setTimeout(() => this.capture(recorder, canvas, count + 1, start, d), delay)
+    setTimeout(() => this.capture(recorder, canvas, count + 1, start), tick)
   }
 
   async record(canvas) {
@@ -193,7 +184,7 @@ class Tinygif {
       this.done = null;
 
       let complete = (blob) => {
-         console.log("Complete " + (Date.now() - this.done))
+         console.log("Complete " + (Date.now() - this.done), blob.size)
          resolve(blob)
       }
 
@@ -206,7 +197,7 @@ class Tinygif {
       })
 
       recorder.start()
-      this.capture(recorder, canvas, 0, Date.now(), Date.now())
+      this.capture(recorder, canvas, 0, Date.now())
     })
   }
 }
@@ -257,6 +248,7 @@ function TinygifRecorder(options) {
   var capturing = false;
   var done = false;
   var blob = null;
+  var last = null;
 
   // Get ready to capture, call this before capturing frames
   this.start = function() {
@@ -288,6 +280,13 @@ function TinygifRecorder(options) {
       imageDataArray = new Uint8Array(imageData.data);
     }
 
+    var adjustedDelay = delay
+    if (last !== null) {
+      var elapsed = ((Date.now() - last) / 100)
+      adjustedDelay = Math.round(delay - (elapsed - delay))
+    }
+    last = Date.now()
+
     // Add this frame onto the stack
     frames.push({
       data: imageDataArray,
@@ -295,7 +294,7 @@ function TinygifRecorder(options) {
       y: 0,
       width: imageData.width,
       height: imageData.height,
-      delay: delay, // TODO, eventually you should be able to pass this in if frames aren't evenly spaced
+      delay: adjustedDelay, // TODO, eventually you should be able to pass this in if frames aren't evenly spaced
       sampleInterval: sampleInterval,
       palette: null,
       quantizer: null,

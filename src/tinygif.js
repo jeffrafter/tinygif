@@ -12,28 +12,19 @@ export default class Tinygif {
     this.options = Object.assign({}, defaults, options)
   }
 
-  capture(recorder, canvas, count, start, last) {
-    let elapsed = Date.now() - start
-    let duration = Date.now() - last
-    let expected = elapsed / (1000 / this.options.fps)
+  capture(recorder, canvas, count, start) {
     let tick = 1000 / this.options.fps
-    let lag = expected - count
-    let skip = false
-    let delay = (tick * 2) - duration
+    let elapsed = Date.now() - start
+    console.log(elapsed, count)
 
-    console.log({elapsed: elapsed, count: count, expected: expected, dur: duration, delay: delay})
-
-    if (!skip) {
-      recorder.capture(canvas)
-    }
-    if (count >= this.options.fps * this.options.seconds) {
+    recorder.capture(canvas)
+    if (count >= this.options.fps * this.options.seconds ||
+      elapsed > (this.options.seconds * 1000)) {
       this.done = Date.now()
-      console.log("Done capturing")
       recorder.stop()
       return
     }
-    var d = Date.now()
-    setTimeout(() => this.capture(recorder, canvas, count + 1, start, d), delay)
+    setTimeout(() => this.capture(recorder, canvas, count + 1, start), tick)
   }
 
   async record(canvas) {
@@ -41,7 +32,7 @@ export default class Tinygif {
       this.done = null;
 
       let complete = (blob) => {
-         console.log("Complete " + (Date.now() - this.done))
+         console.log("Complete " + (Date.now() - this.done), blob.size)
          resolve(blob)
       }
 
@@ -54,7 +45,7 @@ export default class Tinygif {
       })
 
       recorder.start()
-      this.capture(recorder, canvas, 0, Date.now(), Date.now())
+      this.capture(recorder, canvas, 0, Date.now())
     })
   }
 }
