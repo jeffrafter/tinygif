@@ -130,51 +130,17 @@ window.onload = function() {
   video()
   //simple()
 
-  // Getting a gif
-  var ag;
-
-  var record = function() {
-    ag = new __WEBPACK_IMPORTED_MODULE_0__tinygif__["a" /* default */]({
-      loop: 0, // loop 0 = Repeat forever
-      delay: 2,
-      width: canvas.width,
-      height: canvas.height,
-      complete: function(blob) {
-        console.log(blob.size)
-        var img = document.createElement("img");
-        img.src = URL.createObjectURL(blob);
-        document.body.appendChild(img)
-        processingStatus.innerHTML = ((Date.now() - done) + 'ms elapsed; Done');
-      }
-    });
-
-    // TIL Gif has a delay property which if delay==0 it guesses (horribly).
-    // You have to set it to a number in hundreds of ms — which is odd and
-    // not very precise. I went with 50fps and delay 2 (20 ms)… and it looks
-    // amazing… but I’m guessing I’ll need to do more math if I can’t fill
-    var seconds = 5;
-    var fps = 50;
-    var numFrames = fps * seconds;
-    var numRenderedFrames = 0;
-    var done = null;
-
-    ag.start()
-    var captureInterval = setInterval(function() {
-      ag.capture(canvas)
-      numRenderedFrames++;
-      // Call back with an r value indicating how far along we are in capture
-      let pendingFrames = numFrames - numRenderedFrames;
-      recordingStatus.innerHTML = 'Recording: ' + Math.round(((numFrames - pendingFrames) / numFrames) * 100) + '%';
-      if (numRenderedFrames >= numFrames) {
-        clearInterval(captureInterval);
-        recordingStatus.innerHTML = 'Done';
-        done = Date.now()
-        ag.stop()
-      }
-    }, 1000 / fps);
+  const record = async () => {
+    let start = Date.now()
+    let tg = new __WEBPACK_IMPORTED_MODULE_0__tinygif__["a" /* default */]()
+    let blob = await tg.record(canvas)
+    let img = document.createElement("img")
+    img.src = URL.createObjectURL(blob)
+    document.body.appendChild(img)
+    processingStatus.innerHTML = ((Date.now() - start) + 'ms elapsed; Done')
   }
 
-  record();
+  record()
 };
 
 
@@ -183,8 +149,78 @@ window.onload = function() {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__recorder__ = __webpack_require__(2);
+
+
+class Tinygif {
+  constructor(options={}, callback) {
+    let defaults = {
+      loop: 0,
+      delay: 2,
+      fps: 50,
+      seconds: 5
+    }
+
+    this.options = Object.assign({}, defaults, options)
+  }
+
+  capture(recorder, canvas, count, start, last) {
+    let elapsed = Date.now() - start
+    let duration = Date.now() - last
+    let expected = elapsed / (1000 / this.options.fps)
+    let tick = 1000 / this.options.fps
+    let lag = expected - count
+    let skip = false
+    let delay = (tick * 2) - duration
+
+    console.log({elapsed: elapsed, count: count, expected: expected, dur: duration, delay: delay})
+
+    if (!skip) {
+      recorder.capture(canvas)
+    }
+    if (count >= this.options.fps * this.options.seconds) {
+      this.done = Date.now()
+      console.log("Done capturing")
+      recorder.stop()
+      return
+    }
+    var d = Date.now()
+    setTimeout(() => this.capture(recorder, canvas, count + 1, start, d), delay)
+  }
+
+  async record(canvas) {
+    return new Promise((resolve, reject) => {
+      this.done = null;
+
+      let complete = (blob) => {
+         console.log("Complete " + (Date.now() - this.done))
+         resolve(blob)
+      }
+
+      let recorder = new __WEBPACK_IMPORTED_MODULE_0__recorder__["a" /* default */]({
+        loop: this.options.loop,
+        delay: this.options.delay,
+        width: canvas.width,
+        height: canvas.height,
+        complete: complete
+      })
+
+      recorder.start()
+      this.capture(recorder, canvas, 0, Date.now(), Date.now())
+    })
+  }
+}
 /* harmony export (immutable) */ __webpack_exports__["a"] = Tinygif;
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__worker__ = __webpack_require__(2);
+
+
+
+/***/ }),
+/* 2 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (immutable) */ __webpack_exports__["a"] = TinygifRecorder;
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__worker__ = __webpack_require__(3);
 
 
 // Tinygif
@@ -200,11 +236,11 @@ window.onload = function() {
 //   - stop capturing
 //   - check for any pending frames, if none, we're done
 
-function Tinygif(options) {
+function TinygifRecorder(options) {
   'use strict';
 
   options = options || {};
-  var GifWriter = __webpack_require__(4).GifWriter;
+  var GifWriter = __webpack_require__(5).GifWriter;
   var callback = options.complete || function() {};
   var width = options.width;
   var height = options.height;
@@ -384,11 +420,11 @@ function Tinygif(options) {
 
 
 /***/ }),
-/* 2 */
+/* 3 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__NeuQuant__ = __webpack_require__(3);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__NeuQuant__ = __webpack_require__(4);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__NeuQuant___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__NeuQuant__);
 
 
@@ -624,7 +660,7 @@ class TinygifWorker {
 
 
 /***/ }),
-/* 3 */
+/* 4 */
 /***/ (function(module, exports) {
 
 /*
@@ -1228,7 +1264,7 @@ module.exports = function NeuQuant() {
 
 
 /***/ }),
-/* 4 */
+/* 5 */
 /***/ (function(module, exports) {
 
 // (c) Dean McNamee <dean@gmail.com>, 2013.

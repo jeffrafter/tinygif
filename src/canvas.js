@@ -58,49 +58,15 @@ window.onload = function() {
   video()
   //simple()
 
-  // Getting a gif
-  var ag;
-
-  var record = function() {
-    ag = new Tinygif({
-      loop: 0, // loop 0 = Repeat forever
-      delay: 2,
-      width: canvas.width,
-      height: canvas.height,
-      complete: function(blob) {
-        console.log(blob.size)
-        var img = document.createElement("img");
-        img.src = URL.createObjectURL(blob);
-        document.body.appendChild(img)
-        processingStatus.innerHTML = ((Date.now() - done) + 'ms elapsed; Done');
-      }
-    });
-
-    // TIL Gif has a delay property which if delay==0 it guesses (horribly).
-    // You have to set it to a number in hundreds of ms — which is odd and
-    // not very precise. I went with 50fps and delay 2 (20 ms)… and it looks
-    // amazing… but I’m guessing I’ll need to do more math if I can’t fill
-    var seconds = 5;
-    var fps = 50;
-    var numFrames = fps * seconds;
-    var numRenderedFrames = 0;
-    var done = null;
-
-    ag.start()
-    var captureInterval = setInterval(function() {
-      ag.capture(canvas)
-      numRenderedFrames++;
-      // Call back with an r value indicating how far along we are in capture
-      let pendingFrames = numFrames - numRenderedFrames;
-      recordingStatus.innerHTML = 'Recording: ' + Math.round(((numFrames - pendingFrames) / numFrames) * 100) + '%';
-      if (numRenderedFrames >= numFrames) {
-        clearInterval(captureInterval);
-        recordingStatus.innerHTML = 'Done';
-        done = Date.now()
-        ag.stop()
-      }
-    }, 1000 / fps);
+  const record = async () => {
+    let start = Date.now()
+    let tg = new Tinygif()
+    let blob = await tg.record(canvas)
+    let img = document.createElement("img")
+    img.src = URL.createObjectURL(blob)
+    document.body.appendChild(img)
+    processingStatus.innerHTML = ((Date.now() - start) + 'ms elapsed; Done')
   }
 
-  record();
+  record()
 };
