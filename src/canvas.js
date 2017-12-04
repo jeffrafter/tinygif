@@ -61,6 +61,8 @@ window.onload = function() {
   var ag;
 
   var record = function() {
+    var start = Date.now();
+
     ag = new Tinygif({
       loop: 0, // loop 0 = Repeat forever
       delay: 2,
@@ -71,7 +73,8 @@ window.onload = function() {
         var img = document.createElement("img");
         img.src = URL.createObjectURL(blob);
         document.body.appendChild(img)
-        processingStatus.innerHTML = ((Date.now() - done) + 'ms elapsed; Done');
+        var elapsed = Date.now() - start
+        processingStatus.innerHTML = ((Date.now() - done) + 'ms elapsed; Done: ' + elapsed);
       }
     });
 
@@ -91,7 +94,8 @@ window.onload = function() {
       numRenderedFrames++;
       // Call back with an r value indicating how far along we are in capture
       let pendingFrames = numFrames - numRenderedFrames;
-      recordingStatus.innerHTML = 'Recording: ' + Math.round(((numFrames - pendingFrames) / numFrames) * 100) + '%';
+      var elapsed = Date.now() - start
+      recordingStatus.innerHTML = 'Recording: ' + Math.round(((numFrames - pendingFrames) / numFrames) * 100) + '%, Elapsed: ' + elapsed;
       if (numRenderedFrames >= numFrames) {
         clearInterval(captureInterval);
         recordingStatus.innerHTML = 'Done';
