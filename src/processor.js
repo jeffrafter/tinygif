@@ -1,6 +1,6 @@
 import NeuQuant from "./NeuQuant"
 
-export default class TinygifWorker {
+export default class Processor {
   dataToRGB(data, width, height) {
     var i = 0;
     var length = width * height * 4;

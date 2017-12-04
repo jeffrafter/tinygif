@@ -1,4 +1,4 @@
-import TinygifRecorder from './recorder'
+import Recorder from './recorder'
 
 export default class Tinygif {
   constructor(options={}, callback) {
@@ -10,12 +10,17 @@ export default class Tinygif {
     }
 
     this.options = Object.assign({}, defaults, options)
+    this.callback = callback
   }
 
   capture(recorder, canvas, count, start) {
     let tick = 1000 / this.options.fps
     let elapsed = Date.now() - start
-    console.log(elapsed, count)
+
+    // Fire a capture progress callback
+    if (callback) {
+      callback(recorder, count)
+    }
 
     recorder.capture(canvas)
     if (count >= this.options.fps * this.options.seconds ||
@@ -32,11 +37,10 @@ export default class Tinygif {
       this.done = null;
 
       let complete = (blob) => {
-         console.log("Complete " + (Date.now() - this.done), blob.size)
          resolve(blob)
       }
 
-      let recorder = new TinygifRecorder({
+      let recorder = new Recorder({
         loop: this.options.loop,
         delay: this.options.delay,
         width: canvas.width,
