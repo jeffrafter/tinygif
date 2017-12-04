@@ -1,5 +1,4 @@
 import Tinygif from "./tinygif"
-console.log("STARTSSSSSSSSS")
 
 window.onload = function() {
   var recordingStatus = document.getElementById("recording_status");
@@ -58,9 +57,14 @@ window.onload = function() {
   video()
   //simple()
 
+  let start = Date.now()
+
+  const progress = (recorder, count) => {
+    recordingStatus.innerHTML = ((Date.now() - start) + 'ms elapsed; Frames: ' + count)
+  }
+
   const record = async () => {
-    let start = Date.now()
-    let tg = new Tinygif()
+    let tg = new Tinygif({}, progress)
     let blob = await tg.record(canvas)
     let img = document.createElement("img")
     img.src = URL.createObjectURL(blob)

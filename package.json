@@ -1,6 +1,6 @@
 {
   "name": "tinygif",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Fast and efficient animated gif creator in EcmaScript.",
   "main": "index.js",
   "directories": {
@@ -10,7 +10,7 @@
   },
   "scripts": {
     "clean": "rimraf dist",
-    "build": "yarn run webpack",
+    "build": "yarn run webpack && rm *.worker.js",
     "build:watch": "yarn run webpack --colors --watch",
     "lint": "./node_modules/.bin/eslint src",
     "lint-fix": "./node_modules/.bin/eslint --fix src --ext .js",

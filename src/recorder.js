@@ -35,9 +35,11 @@ export default function Recorder(options) {
   var done = false;
   var blob = null;
   var last = null;
+  var start = null;
 
   // Get ready to capture, call this before capturing frames
   this.start = function() {
+    start = Date.now()
     capturing = true
     waiting = true
   }
@@ -51,12 +53,13 @@ export default function Recorder(options) {
   }
 
   // Capture a frame from the canvas
-  this.capture = function(canvas) {
+  this.capture = function(canvas, context, frameDelay) {
     if (!capturing) {
       throw "Not capturing"
     }
 
-    var context = canvas.getContext('2d'); // TODO: opt?
+    frameDelay = frameDelay || delay
+
     var imageData = context.getImageData(0, 0, canvas.width, canvas.height);
     var dataLength = imageData.length,
     imageDataArray = imageData.data;
@@ -66,13 +69,6 @@ export default function Recorder(options) {
       imageDataArray = new Uint8Array(imageData.data);
     }
 
-    var adjustedDelay = delay
-    if (last !== null) {
-      var elapsed = ((Date.now() - last) / 100)
-      adjustedDelay = Math.round(delay - (elapsed - delay))
-    }
-    last = Date.now()
-
     // Add this frame onto the stack
     frames.push({
       data: imageDataArray,
@@ -80,7 +76,7 @@ export default function Recorder(options) {
       y: 0,
       width: imageData.width,
       height: imageData.height,
-      delay: adjustedDelay, // TODO, eventually you should be able to pass this in if frames aren't evenly spaced
+      delay: frameDelay,
       sampleInterval: sampleInterval,
       palette: null,
       quantizer: null,
@@ -100,7 +96,7 @@ export default function Recorder(options) {
     var frame = frames[index];
 
     // Prepare the processor for handling the processed data
-    worker.onmessage = function(message) {
+    processor.onmessage = function(message) {
       var data = message.data;
 
       frame.processed = true;

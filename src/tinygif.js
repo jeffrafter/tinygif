@@ -13,23 +13,13 @@ export default class Tinygif {
     this.callback = callback
   }
 
-  capture(recorder, canvas, count, start) {
-    let tick = 1000 / this.options.fps
-    let elapsed = Date.now() - start
+  capture(recorder, canvas, context, count) {
+    recorder.capture(canvas, context)
 
     // Fire a capture progress callback
-    if (callback) {
-      callback(recorder, count)
+    if (this.callback) {
+      this.callback(recorder, count)
     }
-
-    recorder.capture(canvas)
-    if (count >= this.options.fps * this.options.seconds ||
-      elapsed > (this.options.seconds * 1000)) {
-      this.done = Date.now()
-      recorder.stop()
-      return
-    }
-    setTimeout(() => this.capture(recorder, canvas, count + 1, start), tick)
   }
 
   async record(canvas) {
@@ -48,8 +38,23 @@ export default class Tinygif {
         complete: complete
       })
 
+      let tick = 1000 / this.options.fps
+      let start = Date.now()
+      let count = 0
+      let context = canvas.getContext('2d')
+
       recorder.start()
-      this.capture(recorder, canvas, 0, Date.now())
+      this.captureInterval = setInterval(() => {
+        let elapsed = Date.now() - start
+        this.capture(recorder, canvas, context, count)
+        count++
+        if (count >= this.options.fps * this.options.seconds ||
+          elapsed >= (this.options.seconds * 1000)) {
+          this.done = Date.now()
+          recorder.stop()
+          clearInterval(this.captureInterval)
+        }
+      }, tick)
     })
   }
 }
