@@ -1,6 +1,6 @@
 /*
 If you want to make an example:
-*/
+
 module.exports = {
   entry: "./src/canvas.js",
   output: {
@@ -16,10 +16,9 @@ module.exports = {
     ]
   }
 }
+*/
 
-
-/* If you want to export a version
-
+/* If you want to export a version */
 module.exports = {
   entry: "./src/index.js",
   output: {
@@ -37,4 +36,3 @@ module.exports = {
     ]
   }
 }
-*/

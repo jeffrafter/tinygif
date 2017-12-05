@@ -128,8 +128,8 @@ window.onload = function() {
 
     var bunny = createVideo("https://tiny-packages.s3.amazonaws.com/dist/big-buck-bunny_trailer.webm")
   }
-  video()
-  //simple()
+  //video()
+  simple()
 
   let start = Date.now()
 
@@ -150,10 +150,6 @@ window.onload = function() {
 
   recordButton.onclick = () => { record() }
   snapshotButton.onclick = () => { record(1) }
-
-  setTimeout(() => {
-    record()
-  }, 4000)
 };
 
 
