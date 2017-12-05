@@ -78,8 +78,4 @@ window.onload = function() {
 
   recordButton.onclick = () => { record() }
   snapshotButton.onclick = () => { record(1) }
-
-  setTimeout(() => {
-    record()
-  }, 4000)
 };
