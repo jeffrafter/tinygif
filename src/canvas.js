@@ -3,6 +3,8 @@ import Tinygif from "./tinygif"
 window.onload = function() {
   var recordingStatus = document.getElementById("recording_status");
   var processingStatus = document.getElementById("processing_status");
+  var recordButton = document.getElementById("record");
+  var snapshotButton = document.getElementById("snapshot");
   var canvas = document.getElementById("sample_canvas");
   var context = canvas.getContext("2d")
 
@@ -57,53 +59,23 @@ window.onload = function() {
   video()
   //simple()
 
-  // Getting a gif
-  var ag;
+  let start = Date.now()
 
-  var record = function() {
-    var start = Date.now();
-
-    ag = new Tinygif({
-      loop: 0, // loop 0 = Repeat forever
-      delay: 2,
-      width: canvas.width,
-      height: canvas.height,
-      complete: function(blob) {
-        console.log(blob.size)
-        var img = document.createElement("img");
-        img.src = URL.createObjectURL(blob);
-        document.body.appendChild(img)
-        var elapsed = Date.now() - start
-        processingStatus.innerHTML = ((Date.now() - done) + 'ms elapsed; Done: ' + elapsed);
-      }
-    });
-
-    // TIL Gif has a delay property which if delay==0 it guesses (horribly).
-    // You have to set it to a number in hundreds of ms — which is odd and
-    // not very precise. I went with 50fps and delay 2 (20 ms)… and it looks
-    // amazing… but I’m guessing I’ll need to do more math if I can’t fill
-    var seconds = 5;
-    var fps = 50;
-    var numFrames = fps * seconds;
-    var numRenderedFrames = 0;
-    var done = null;
-
-    ag.start()
-    var captureInterval = setInterval(function() {
-      ag.capture(canvas)
-      numRenderedFrames++;
-      // Call back with an r value indicating how far along we are in capture
-      let pendingFrames = numFrames - numRenderedFrames;
-      var elapsed = Date.now() - start
-      recordingStatus.innerHTML = 'Recording: ' + Math.round(((numFrames - pendingFrames) / numFrames) * 100) + '%, Elapsed: ' + elapsed;
-      if (numRenderedFrames >= numFrames) {
-        clearInterval(captureInterval);
-        recordingStatus.innerHTML = 'Done';
-        done = Date.now()
-        ag.stop()
-      }
-    }, 1000 / fps);
+  const progress = (recorder, count) => {
+    recordingStatus.innerHTML = ((Date.now() - start) + 'ms elapsed; Frames: ' + count)
   }
 
-  record();
+  const record = async (count) => {
+    start = Date.now()
+    let tg = new Tinygif({frames: count}, progress)
+    let blob = await tg.record(canvas)
+    let img = document.createElement("img")
+    img.src = URL.createObjectURL(blob)
+    document.body.appendChild(img)
+    processingStatus.innerHTML = ((Date.now() - start) + 'ms elapsed; Done')
+  }
+
+
+  recordButton.onclick = () => { record() }
+  snapshotButton.onclick = () => { record(1) }
 };
