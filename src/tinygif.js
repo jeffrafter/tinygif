@@ -6,7 +6,8 @@ export default class Tinygif {
       loop: 0,
       delay: 2,
       fps: 50,
-      seconds: 5
+      seconds: 5,
+      frames: null
     }
 
     this.options = Object.assign({}, defaults, options)
@@ -48,8 +49,9 @@ export default class Tinygif {
         let elapsed = Date.now() - start
         this.capture(recorder, canvas, context, count)
         count++
-        if (count >= this.options.fps * this.options.seconds ||
-          elapsed >= (this.options.seconds * 1000)) {
+        var maxFrames = this.options.frames
+        var maxElapsed = this.options.seconds ? (this.options.seconds * 1000) : null
+        if ((maxFrames && (count >= maxFrames)) || (maxElapsed && (elapsed >= maxElapsed))) {
           this.done = Date.now()
           recorder.stop()
           clearInterval(this.captureInterval)

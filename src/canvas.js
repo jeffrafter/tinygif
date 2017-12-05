@@ -3,6 +3,8 @@ import Tinygif from "./tinygif"
 window.onload = function() {
   var recordingStatus = document.getElementById("recording_status");
   var processingStatus = document.getElementById("processing_status");
+  var recordButton = document.getElementById("record");
+  var snapshotButton = document.getElementById("snapshot");
   var canvas = document.getElementById("sample_canvas");
   var context = canvas.getContext("2d")
 
@@ -63,8 +65,9 @@ window.onload = function() {
     recordingStatus.innerHTML = ((Date.now() - start) + 'ms elapsed; Frames: ' + count)
   }
 
-  const record = async () => {
-    let tg = new Tinygif({}, progress)
+  const record = async (count) => {
+    start = Date.now()
+    let tg = new Tinygif({frames: count}, progress)
     let blob = await tg.record(canvas)
     let img = document.createElement("img")
     img.src = URL.createObjectURL(blob)
@@ -72,5 +75,11 @@ window.onload = function() {
     processingStatus.innerHTML = ((Date.now() - start) + 'ms elapsed; Done')
   }
 
-  record()
+
+  recordButton.onclick = () => { record() }
+  snapshotButton.onclick = () => { record(1) }
+
+  setTimeout(() => {
+    record()
+  }, 4000)
 };

@@ -110,6 +110,7 @@ export default function Recorder(options) {
         frame.pixels = data.pixels
         frame.global = data.global
         frame.palette = data.palette
+        frame.quantizer = data.quantizer
         frame.x = data.delta.x
         frame.y = data.delta.y
         frame.width = data.delta.width

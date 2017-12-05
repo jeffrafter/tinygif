@@ -136,6 +136,7 @@ export default class Processor {
     // we would need to map the colors
     if (palette && !quantizer) {
       var globalPaletteMatches = true
+      var globalPaletteAdded = false
       // Build a quick lookup table, TODO... pass this around
       for (var i = 0, l = palette.length; i < l; i++) {
         colorsHash[palette[i]] = i;
@@ -148,11 +149,12 @@ export default class Processor {
         var color = (0 << 24 | r << 16 | g << 8 | b);
         var foundIndex = colorsHash[color];
         // If we didn't find it on the global palette, is there room to add it?
-        if (foundIndex == null && palette.length == 255) {
+        if (foundIndex == null && palette.length >= 255) {
           globalPaletteMatches = false;
           break;
         }
         if (foundIndex == null) {
+          globalPaletteAdded = true;
           palette.push(color);
           foundIndex = palette.length - 1;
           colorsHash[color] = foundIndex;
@@ -164,8 +166,8 @@ export default class Processor {
         return {
           delta: delta,
           pixels: indexedPixels,
-          global: true, // assign this to global palette
-          palette: palette
+          global: globalPaletteAdded, // assign this to global palette as we may have added colors
+          palette: globalPaletteAdded ? palette : null
         };
       }
     }
