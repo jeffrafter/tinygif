@@ -23,7 +23,7 @@ export default class Tinygif {
     }
   }
 
-  async record(canvas) {
+  record(canvas) {
     return new Promise((resolve, reject) => {
       this.done = null;
 
