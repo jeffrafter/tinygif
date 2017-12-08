@@ -1,6 +1,6 @@
 {
   "name": "tinygif",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Fast and efficient animated gif creator in EcmaScript.",
   "main": "index.js",
   "directories": {

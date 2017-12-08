@@ -23,6 +23,8 @@ module.exports = {
   entry: "./src/canvas.js",
   output: {
     filename: "example/bundle.js",
+    library: "Tinygif",
+    libraryTarget: "umd" 
   },
   module: {
     loaders: [
