@@ -32,13 +32,6 @@ module.exports = {
         test: /\.worker\.js$/,
         loader: 'worker-loader',
         options: { inline: true }
-      },
-      {
-        test: /\.js$/,
-        loader: 'babel-loader',
-        query: {
-          presets: ['env']
-        }
       }
     ]
   }
