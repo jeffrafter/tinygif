@@ -20,11 +20,11 @@ module.exports = {
 
 /* If you want to export a version */
 module.exports = {
-  entry: "./src/canvas.js",
+  entry: "./src/index.js",
   output: {
-    filename: "example/bundle.js",
+    filename: "index.js",
     library: "Tinygif",
-    libraryTarget: "umd" 
+    libraryTarget: "umd"
   },
   module: {
     loaders: [
@@ -32,6 +32,13 @@ module.exports = {
         test: /\.worker\.js$/,
         loader: 'worker-loader',
         options: { inline: true }
+      },
+      {
+        test: /\.js$/,
+        loader: 'babel-loader',
+        query: {
+          presets: ['env']
+        }
       }
     ]
   }
