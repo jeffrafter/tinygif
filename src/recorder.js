@@ -35,6 +35,7 @@ export default function Recorder(options) {
   var renderingIndex = 0;
   var processingWaiting = false;
   var renderingWaiting = false;
+  var prerender = options.prerender === false ? false : true;
   var capturing = false;
   var gifBuffer = null;
   var gifWriter = null;
@@ -58,6 +59,11 @@ export default function Recorder(options) {
     if (processingIndex >= frames.length && renderingWaiting) {
       render()
     }
+  }
+
+  // We died.
+  this.error = function(error) {
+    capturing = false
   }
 
   // Capture a frame from the canvas
@@ -161,7 +167,7 @@ export default function Recorder(options) {
     // palette at the end of rendering since we know where it goes.
 
     // Can we start pre-rendering?
-    var canRender = (palette.length == 256)
+    var canRender = (palette.length == 256) && prerender
     if (canRender && renderingWaiting) {
       renderingWaiting = false
       render()

@@ -101,6 +101,7 @@ var Tinygif = function () {
     _classCallCheck(this, Tinygif);
 
     var defaults = {
+      prerender: true,
       loop: 0,
       fps: 50,
       seconds: 5,
@@ -131,10 +132,15 @@ var Tinygif = function () {
           resolve(blob);
         };
 
+        var error = function error(err) {
+          reject(err);
+        };
+
         var tick = 1000 / _this.options.fps;
         var delay = tick / 10;
 
         var recorder = new _recorder2.default({
+          prerender: _this.options.prerender,
           loop: _this.options.loop,
           delay: delay | 0,
           width: canvas.width,
@@ -151,14 +157,22 @@ var Tinygif = function () {
         recorder.start();
         _this.captureInterval = setInterval(function () {
           var elapsed = Date.now() - start;
-          _this.capture(recorder, canvas, context, count);
+          try {
+            _this.capture(recorder, canvas, context, count);
+          } catch (err) {
+            _this.done = Date.now();
+            recorder.error(err);
+            if (_this.captureInterval) clearInterval(_this.captureInterval);
+            error(err);
+            return;
+          }
           count++;
           var maxFrames = _this.options.frames;
           var maxElapsed = _this.options.seconds ? _this.options.seconds * 1000 : null;
           if (maxFrames && count >= maxFrames || maxElapsed && elapsed >= maxElapsed) {
             _this.done = Date.now();
             recorder.stop();
-            clearInterval(_this.captureInterval);
+            if (_this.captureInterval) clearInterval(_this.captureInterval);
           }
         }, tick);
       });
@@ -216,6 +230,7 @@ function Recorder(options) {
   var renderingIndex = 0;
   var processingWaiting = false;
   var renderingWaiting = false;
+  var prerender = options.prerender === false ? false : true;
   var capturing = false;
   var gifBuffer = null;
   var gifWriter = null;
@@ -239,6 +254,11 @@ function Recorder(options) {
     if (processingIndex >= frames.length && renderingWaiting) {
       render()
     }
+  }
+
+  // We died.
+  this.error = function(error) {
+    capturing = false
   }
 
   // Capture a frame from the canvas
@@ -342,7 +362,7 @@ function Recorder(options) {
     // palette at the end of rendering since we know where it goes.
 
     // Can we start pre-rendering?
-    var canRender = (palette.length == 256)
+    var canRender = (palette.length == 256) && prerender
     if (canRender && renderingWaiting) {
       renderingWaiting = false
       render()

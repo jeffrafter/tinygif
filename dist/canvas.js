@@ -86,9 +86,9 @@ window.onload = function() {
 
     var bunny = createVideo("https://tiny-packages.s3.amazonaws.com/dist/big-buck-bunny_trailer.webm")
   }
-  //video()
+  video()
   //simple()
-  complex()
+  //complex()
 
   let start = Date.now()
 
