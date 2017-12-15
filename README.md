@@ -11,7 +11,7 @@ This code is based on @sole's https://github.com/sole/Animated_GIF. It adds a fe
 * Attempt to skip duplicate frames
 * Render/write only the changed portion (delta) of each frame
 
-In general this makes processing much faster and significantly reduces the size of the generated files. 
+In general this makes processing much faster and significantly reduces the size of the generated files.
 
 # How it works
 
@@ -34,7 +34,7 @@ const progress = (recorder, count) => {
 
 const record = async () => {
   start = Date.now()
-  let tg = new Tinygif({}, progress)
+  let tg = new Tinygif({}, progress) // you may need new Tinygif.default(...)
   let blob = await tg.record(canvas)
   let img = document.createElement("img")
   img.src = URL.createObjectURL(blob)
@@ -59,6 +59,7 @@ record()
     - Skip frames (this looks very choppy)
     - If you don't capture enough frames and you don't adjust the delays then you end up with an animation that plays faster than the recorded time and looks "sped up". This is the trade-off we are accepting for now.
 * Upgrade more code to ES2017
+* https://developer.mozilla.org/en-US/docs/Web/API/Transferable, https://developers.google.com/web/updates/2011/12/Transferable-Objects-Lightning-Fast
 
 ## Credits
 

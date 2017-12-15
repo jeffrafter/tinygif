@@ -1,26 +1,23 @@
 import Recorder from './recorder'
 
 export default class Tinygif {
-  constructor(options={}, callback) {
+  constructor(options={}) {
     let defaults = {
       loop: 0,
-      delay: 2,
       fps: 50,
       seconds: 5,
-      frames: null
+      frames: null,
+      recordingProgress: () => {},
+      processingProgress: () => {},
+      renderingProgress: () => {},
     }
 
     this.options = Object.assign({}, defaults, options)
-    this.callback = callback
   }
 
   capture(recorder, canvas, context, count) {
     recorder.capture(canvas, context)
-
-    // Fire a capture progress callback
-    if (this.callback) {
-      this.callback(recorder, count)
-    }
+    this.options.recordingProgress(count)
   }
 
   record(canvas) {
@@ -31,15 +28,19 @@ export default class Tinygif {
          resolve(blob)
       }
 
+      let tick = 1000 / this.options.fps
+      let delay = tick / 10
+
       let recorder = new Recorder({
         loop: this.options.loop,
-        delay: this.options.delay,
+        delay: delay | 0,
         width: canvas.width,
         height: canvas.height,
+        processingProgress: this.options.processingProgress,
+        renderingProgress: this.options.renderingProgress,
         complete: complete
       })
 
-      let tick = 1000 / this.options.fps
       let start = Date.now()
       let count = 0
       let context = canvas.getContext('2d')

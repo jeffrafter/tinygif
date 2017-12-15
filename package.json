@@ -2,20 +2,20 @@
   "name": "tinygif",
   "version": "1.1.0",
   "description": "Fast and efficient animated gif creator in EcmaScript.",
-  "main": "index.js",
+  "main": "dist/tinygif.js",
   "directories": {
-    "example": "example",
-    "lib": "lib",
+    "src": "src",
+    "dist": "dist",
     "test": "tests"
   },
   "scripts": {
     "clean": "rimraf dist",
-    "build": "yarn run webpack && rm *.worker.js",
+    "build": "yarn run webpack",
     "build:watch": "yarn run webpack --colors --watch",
     "lint": "./node_modules/.bin/eslint src",
     "lint-fix": "./node_modules/.bin/eslint --fix src --ext .js",
     "test": "npm run lint",
-    "example": "node example/server/server.js"
+    "start": "webpack-dev-server --open"
   },
   "keywords": [],
   "author": "Jeff Rafter",

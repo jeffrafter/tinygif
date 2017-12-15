@@ -1,21 +1,6 @@
 import NeuQuant from "./NeuQuant"
 
 export default class Processor {
-  dataToRGB(data, width, height) {
-    var i = 0;
-    var length = width * height * 4;
-    var rgb = [];
-
-    while(i < length) {
-      rgb.push( data[i++] );
-      rgb.push( data[i++] );
-      rgb.push( data[i++] );
-      i++; // for the alpha channel which we don't care about
-    }
-
-    return rgb;
-  }
-
   componentizedPaletteToArray(paletteRGB) {
     var paletteArray = [];
 
@@ -206,18 +191,17 @@ export default class Processor {
     // This is the "traditional" animatied gif style of going from RGBA to
     // indexed color frames via sampling
 
-    // TODO: optimize this out, save 12%
-    var rgbComponents = this.dataToRGB(deltaImageData, delta.width, delta.height);
     // TODO: learning and process is the slowest part
-    var nq = new NeuQuant(rgbComponents, rgbComponents.length, sampleInterval || 10);
+    var nq = new NeuQuant(deltaImageData, deltaImageData.length, sampleInterval || 10);
     var paletteRGB = nq.process();
     var paletteArray = this.componentizedPaletteToArray(paletteRGB);
 
     var k = 0;
     for(var i = 0; i < numberPixels; i++) {
-      r = rgbComponents[k++];
-      g = rgbComponents[k++];
-      b = rgbComponents[k++];
+      r = deltaImageData[k++];
+      g = deltaImageData[k++];
+      b = deltaImageData[k++];
+      k++; // ignore alpha
       indexedPixels[i] = nq.map(r, g, b);
     }
 

@@ -31,6 +31,7 @@
 
 module.exports = function NeuQuant() {
 
+    var pixSize = 4; // expect rgba
     var netsize = 256; // number of colours used
 
     // four primes near 500 - assume no image has a length so large
@@ -41,7 +42,7 @@ module.exports = function NeuQuant() {
     var prime4 = 503;
 
     // minimum size for input image
-    var minpicturebytes = (3 * prime4);
+    var minpicturebytes = (pixSize * prime4);
 
     // Network Definitions
 
@@ -82,7 +83,7 @@ module.exports = function NeuQuant() {
 
     // Input image
     var thepicture;
-    // Height * Width * 3
+    // Height * Width * pixSize
     var lengthcount;
     // Sampling factor 1..30
     var samplefac;
@@ -230,11 +231,11 @@ module.exports = function NeuQuant() {
             samplefac = 1;
         }
 
-        alphadec = 30 + ((samplefac - 1) / 3);
+        alphadec = 30 + ((samplefac - 1) / pixSize);
         p = thepicture;
         pix = 0;
         lim = lengthcount;
-        samplepixels = lengthcount / (3 * samplefac);
+        samplepixels = lengthcount / (pixSize * samplefac);
         delta = (samplepixels / ncycles) | 0;
         alpha = initalpha;
         radius = initradius;
@@ -250,18 +251,18 @@ module.exports = function NeuQuant() {
 
 
         if (lengthcount < minpicturebytes) {
-            step = 3;
+            step = pixSize;
         } else if ((lengthcount % prime1) !== 0) {
-            step = 3 * prime1;
+            step = pixSize * prime1;
         } else {
 
             if ((lengthcount % prime2) !== 0) {
-                step = 3 * prime2;
+                step = pixSize * prime2;
             } else {
                 if ((lengthcount % prime3) !== 0) {
-                    step = 3 * prime3;
+                    step = pixSize * prime3;
                 } else {
-                    step = 3 * prime4;
+                    step = pixSize * prime4;
                 }
             }
 
@@ -324,7 +325,7 @@ module.exports = function NeuQuant() {
         var p;
         var best;
 
-        // Biggest possible distance is 256 * 3
+        // Biggest possible distance is 256 * pixSize
         bestd = 1000;
         best = -1;
         i = netindex[g]; // index on g

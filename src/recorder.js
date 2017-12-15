@@ -19,6 +19,8 @@ export default function Recorder(options) {
   options = options || {};
   var GifWriter = require('omggif').GifWriter;
   var callback = options.complete || function() {};
+  var processingProgress = options.processingProgress || function() {};
+  var renderingProgress = options.renderingProgress || function() {};
   var width = options.width;
   var height = options.height;
   var palette = options.palette || null;
@@ -29,9 +31,13 @@ export default function Recorder(options) {
   var frames = [];
   var previous = null;
   var processor = new ProcessorWorker();
-  var index = 0;
-  var waiting = false;
+  var processingIndex = 0;
+  var renderingIndex = 0;
+  var processingWaiting = false;
+  var renderingWaiting = false;
   var capturing = false;
+  var gifBuffer = null;
+  var gifWriter = null;
   var done = false;
   var blob = null;
   var last = null;
@@ -41,13 +47,15 @@ export default function Recorder(options) {
   this.start = function() {
     start = Date.now()
     capturing = true
-    waiting = true
+    processingWaiting = true
+    renderingWaiting = true
   }
 
   // No more frames will be captured, finish up the work and render
   this.stop = function() {
     capturing = false
-    if (index >= frames.length) {
+    // Processing was all caught up... but we still need to render
+    if (processingIndex >= frames.length && renderingWaiting) {
       render()
     }
   }
@@ -85,15 +93,16 @@ export default function Recorder(options) {
       rendered: false
     });
 
-    if (waiting) {
-      waiting = false
+    if (processingWaiting) {
+      processingWaiting = false
       process()
     }
   }
 
   // Process the palette and index the image data for the next available frame
   function process() {
-    var frame = frames[index];
+    var frame = frames[processingIndex];
+    frame.index = processingIndex;
 
     // Prepare the processor for handling the processed data
     processor.onmessage = function(message) {
@@ -124,13 +133,14 @@ export default function Recorder(options) {
         }
 
         // If it is the first frame, just use the global palette to save a frame
-        if (index == 0) frame.palette = null
+        if (frame.index == 0) frame.palette = null
 
         // Delete previous data, and free memory
         if (previous) delete(previous.data)
         previous = frame
       }
 
+      processingProgress(frame.index, frames.length, frame)
       processed();
     }
 
@@ -145,9 +155,19 @@ export default function Recorder(options) {
   // A frame was just processed, check for more work or finish
   function processed() {
     // Move to next frame
-    index++
+    processingIndex++
 
-    var hasPendingFrames = index < frames.length
+    // TODO: we could actually start rendering immediately and insert the global
+    // palette at the end of rendering since we know where it goes.
+
+    // Can we start pre-rendering?
+    var canRender = (palette.length == 256)
+    if (canRender && renderingWaiting) {
+      renderingWaiting = false
+      render()
+    }
+
+    var hasPendingFrames = processingIndex < frames.length
 
     // Check for pending frames, if any process
     if (hasPendingFrames) {
@@ -157,30 +177,36 @@ export default function Recorder(options) {
 
     // If still capturing and no pending frames, start waiting again
     if (capturing) {
-      waiting = true
+      processingWaiting = true
       return
     }
 
+    // Everything is done... we need to tell someone
     // If done capturing and no pending frames, we're done
-    render();
+    if (renderingWaiting) {
+      render();
+    }
   }
 
-  // Render the processed frames as a gif (all at once)
+  // Render the processed frames as a gif
   function render() {
-    var buffer = []; // new Uint8Array(width * height * frames.length * 5);
-    var gifOptions = { loop: loop };
+    // If we haven't started the gif lets do it now
+    if (!gifWriter) {
+      gifBuffer = [];
+      var gifOptions = { loop: loop };
 
-    if (palette !== null) {
-      ensurePalettePowerOfTwo(palette);
-      gifOptions.palette = palette
+      if (palette !== null) {
+        ensurePalettePowerOfTwo(palette);
+        gifOptions.palette = palette
+      }
+
+      gifWriter = new GifWriter(gifBuffer, width, height, gifOptions);
     }
 
-    var gifWriter = new GifWriter(buffer, width, height, gifOptions);
+    var frame = frames[renderingIndex]
+    renderingProgress(renderingIndex, frames.length, frame)
 
-    frames.forEach(function(frame, index) {
-      if (frame.skip) {
-        return;
-      }
+    if (!frame.skip) {
       if (frame.palette) {
         ensurePalettePowerOfTwo(frame.palette);
       }
@@ -188,12 +214,33 @@ export default function Recorder(options) {
         palette: frame.palette,
         delay: frame.delay
       });
-    });
+    }
+    // Let go of memory fast
+    if (frame.palette) delete(frame.palette)
+    if (frame.pixels) delete(frame.pixels)
 
+    // Move to next frame
+    renderingIndex++
+
+    // Are there any frames that have been processed, but not rendered?
+    var hasPendingFrames = renderingIndex < processingIndex
+    if (hasPendingFrames) {
+      setTimeout(render, 1);
+      return
+    }
+
+    // If still capturing and no pending frames don't complete the render
+    var hasPendingProcessingFrames = processingIndex < frames.length
+    if (capturing || hasPendingProcessingFrames) {
+      renderingWaiting = true
+      return
+    }
+
+    // We're done
     gifWriter.end();
     // Explicitly ask web workers to die so they are explicitly GC'ed
     processor.terminate()
-    var array = new Uint8Array(buffer);
+    var array = new Uint8Array(gifBuffer);
     blob = new Blob([ array ], { type: 'image/gif' });
     frames = [];
     done = true
