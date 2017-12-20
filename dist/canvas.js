@@ -113,7 +113,7 @@ window.onload = function() {
     let tg = new Tinygif.default({
       fps: 30,
       frames: count,
-      prerender: false,
+      prerender: true,
       recordingProgress: recordingProgress,
       processingProgress: processingProgress,
       renderingProgress: renderingProgress,

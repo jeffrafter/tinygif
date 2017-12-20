@@ -320,7 +320,6 @@ function Recorder(options) {
         delete(frame.data)
         delete(frame.pixels)
         delete(frame.palette)
-        console.log("skip")
       } else {
         frame.pixels = data.pixels
         frame.global = data.global
@@ -434,7 +433,7 @@ function Recorder(options) {
     // Are there any frames that have been processed, but not rendered?
     var hasRenderableFrames = renderingIndex < renderableIndex
     if (hasRenderableFrames) {
-      setTimeout(render, 1);
+      setTimeout(render, 0);
       return
     }
 
@@ -448,7 +447,7 @@ function Recorder(options) {
     // The last frame may have been buffering, try to get that one too
     var hasPendingFrames = renderingIndex < processingIndex
     if (hasPendingFrames) {
-      setTimeout(render, 1);
+      setTimeout(render, 0);
       return
     }
 
