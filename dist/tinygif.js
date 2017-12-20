@@ -227,6 +227,7 @@ function Recorder(options) {
   var previous = null;
   var processor = new __WEBPACK_IMPORTED_MODULE_0__processor_worker_js___default.a();
   var processingIndex = 0;
+  var renderableIndex = 0;
   var renderingIndex = 0;
   var processingWaiting = false;
   var renderingWaiting = false;
@@ -316,6 +317,10 @@ function Recorder(options) {
       // If nothing has changed between frames, lets just skip this frame
       if (frame.skip) {
         previous.delay += frame.delay
+        delete(frame.data)
+        delete(frame.pixels)
+        delete(frame.palette)
+        console.log("skip")
       } else {
         frame.pixels = data.pixels
         frame.global = data.global
@@ -339,6 +344,9 @@ function Recorder(options) {
         // Delete previous data, and free memory
         if (previous) delete(previous.data)
         previous = frame
+
+        // We've accounted for the skips and can render another frame
+        renderableIndex++
       }
 
       processingProgress(frame.index, frames.length, frame)
@@ -363,7 +371,7 @@ function Recorder(options) {
 
     // Can we start pre-rendering?
     var canRender = (palette.length == 256) && prerender
-    if (canRender && renderingWaiting) {
+    if (canRender && renderingWaiting && renderingIndex < renderableIndex) {
       renderingWaiting = false
       render()
     }
@@ -372,7 +380,7 @@ function Recorder(options) {
 
     // Check for pending frames, if any process
     if (hasPendingFrames) {
-      setTimeout(process, 1);
+      setTimeout(process, 0);
       return
     }
 
@@ -424,8 +432,8 @@ function Recorder(options) {
     renderingIndex++
 
     // Are there any frames that have been processed, but not rendered?
-    var hasPendingFrames = renderingIndex < processingIndex
-    if (hasPendingFrames) {
+    var hasRenderableFrames = renderingIndex < renderableIndex
+    if (hasRenderableFrames) {
       setTimeout(render, 1);
       return
     }
@@ -434,6 +442,13 @@ function Recorder(options) {
     var hasPendingProcessingFrames = processingIndex < frames.length
     if (capturing || hasPendingProcessingFrames) {
       renderingWaiting = true
+      return
+    }
+
+    // The last frame may have been buffering, try to get that one too
+    var hasPendingFrames = renderingIndex < processingIndex
+    if (hasPendingFrames) {
+      setTimeout(render, 1);
       return
     }
 

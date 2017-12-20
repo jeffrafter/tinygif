@@ -8,6 +8,8 @@ window.onload = function() {
   var canvas = document.getElementById("sample_canvas");
   var context = canvas.getContext("2d")
 
+  var stop = false
+
   // A simple animation
   var simple = function() {
     var pos = {x: 0, y: 0};
@@ -22,7 +24,7 @@ window.onload = function() {
       context.fillRect(0, 0, canvas.width, canvas.height);
       context.fillStyle = "purple";
       context.fillRect(pos.x, pos.y, 20, 20);
-      requestAnimationFrame(animate);
+      if (!stop) requestAnimationFrame(animate);
     }
     animate()
   }
@@ -52,7 +54,7 @@ window.onload = function() {
         }
         context.fillRect(square.x, square.y, 20, 20);
       }
-      requestAnimationFrame(animate);
+      if (!stop) requestAnimationFrame(animate);
     }
     animate()
   }
@@ -66,7 +68,7 @@ window.onload = function() {
       if (v.paused || v.ended) return false;
       context.beginPath();
       context.drawImage(v,32,32,236,154);
-      requestAnimationFrame(() => draw(v))
+      if (!stop) requestAnimationFrame(() => draw(v))
     }
 
     var createVideo = function(src) {
@@ -86,24 +88,19 @@ window.onload = function() {
 
     var bunny = createVideo("https://tiny-packages.s3.amazonaws.com/dist/big-buck-bunny_trailer.webm")
   }
-  video()
+  //video()
   //simple()
-  //complex()
+  complex()
 
   let start = Date.now()
 
   const recordingProgress = (count) => {
     recordingStatus.innerHTML = ((Date.now() - start) + 'ms elapsed; Frames: ' + count)
+    if (count > 50) stop = true
   }
 
   const processingProgress = (index, count, frame) => {
     processingStatus.innerHTML = ((Date.now() - start) + 'ms elapsed; Frames: ' + index + '/' + count)
-  }
-
-  var lastRenderingProgress = {
-    index: 0,
-    count: 0,
-    frame: null
   }
 
   const renderingProgress = (index, count, frame) => {
@@ -111,10 +108,12 @@ window.onload = function() {
   }
 
   const record = async (count) => {
+    stop = false
     start = Date.now()
     let tg = new Tinygif.default({
       fps: 30,
       frames: count,
+      prerender: false,
       recordingProgress: recordingProgress,
       processingProgress: processingProgress,
       renderingProgress: renderingProgress,
