@@ -174,8 +174,7 @@ export default function Recorder(options) {
     // palette at the end of rendering since we know where it goes.
 
     // Can we start pre-rendering?
-    var canRender = (palette.length == 256) && prerender
-    if (canRender && renderingWaiting && renderingIndex < renderableIndex) {
+    if (prerender && renderingWaiting && renderingIndex < renderableIndex) {
       renderingWaiting = false
       render()
     }
@@ -206,13 +205,7 @@ export default function Recorder(options) {
     // If we haven't started the gif lets do it now
     if (!gifWriter) {
       gifBuffer = [];
-      var gifOptions = { loop: loop };
-
-      if (palette !== null) {
-        ensurePalettePowerOfTwo(palette);
-        gifOptions.palette = palette
-      }
-
+      var gifOptions = { loop: loop, palette: [0, 0] };
       gifWriter = new GifWriter(gifBuffer, width, height, gifOptions);
     }
 
@@ -224,6 +217,7 @@ export default function Recorder(options) {
         ensurePalettePowerOfTwo(frame.palette);
       }
       gifWriter.addFrame(frame.x, frame.y, frame.width, frame.height, frame.pixels, {
+        num_colors: (frame.palette || palette).length,
         palette: frame.palette,
         delay: frame.delay
       });
@@ -259,8 +253,41 @@ export default function Recorder(options) {
     // We're done
     gifWriter.end();
     // Explicitly ask web workers to die so they are explicitly GC'ed
-    processor.terminate()
-    var array = new Uint8Array(gifBuffer);
+    processor.postMessage({
+      debug: true
+    })
+    // processor.terminate()
+
+    // Insert the palette now
+    ensurePalettePowerOfTwo(palette);
+
+    // Adjust the packed field
+    let packedField
+    let gp_num_colors_pow2 = 0
+    let gp_num_colors = palette.length
+    while (gp_num_colors >>= 1) ++gp_num_colors_pow2
+    gp_num_colors = 1 << gp_num_colors_pow2
+    --gp_num_colors_pow2;
+    packedField = 0x80 | gp_num_colors_pow2
+    gifBuffer[10] = packedField
+
+    // Build Global Color Table
+    let colorTable = []
+    let p = 0
+    for (var i = 0, il = palette.length; i < il; ++i) {
+      var rgb = palette[i];
+      colorTable[p++] = rgb >> 16 & 0xff;
+      colorTable[p++] = rgb >> 8 & 0xff;
+      colorTable[p++] = rgb & 0xff;
+    }
+
+    // Insert the global palette into the array
+    let tail = gifBuffer.splice(19, gifBuffer.length)
+    gifBuffer.splice(13, 19)
+    gifBuffer = gifBuffer.concat(colorTable)
+    gifBuffer = gifBuffer.concat(tail)
+
+    var array = new Uint8Array(gifBuffer)
     blob = new Blob([ array ], { type: 'image/gif' });
     frames = [];
     done = true

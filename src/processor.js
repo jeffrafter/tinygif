@@ -84,6 +84,16 @@ export default class Processor {
   }
 
   run(frame, previous, palette, quantizer) {
+    this.timing = this.timing || {
+      findDelta: 0,
+      checkGlobalPalette: 0,
+      checkLocalPalette: 0,
+      quantProcess: 0,
+      quantComponentize: 0,
+      quantIndex: 0
+    }
+    let t0
+
     var previousData = previous ? previous.data : null;
     var imageData = frame.data;
     var width = frame.width;
@@ -91,7 +101,9 @@ export default class Processor {
     var sampleInterval = frame.sampleInterval;
 
     // Find the delta
+    t0 = performance.now()
     var delta = this.dirtyRect(previousData, imageData, width, height);
+    this.timing.findDelta += performance.now() - t0
     if (!delta) {
       return {
         skip: true
@@ -120,6 +132,7 @@ export default class Processor {
     // to add a couple more colors, unless it is a quantized palette because
     // we would need to map the colors
     if (palette && !quantizer) {
+      t0 = performance.now()
       var globalPaletteMatches = true
       var globalPaletteAdded = false
       // Build a quick lookup table, TODO... pass this around
@@ -146,6 +159,7 @@ export default class Processor {
         }
         indexedPixels[pixel++] = foundIndex;
       }
+      this.timing.checkGlobalPalette += performance.now() - t0
 
       if (globalPaletteMatches) {
         return {
@@ -160,6 +174,7 @@ export default class Processor {
     // We couldn't use the global palette, try to create a local palette instead
     // Grabbing the unique colors and just using them is way more efficient, but
     // it doesn't work for images > 256 colors; we'll be optimisitic about it
+    t0 = performance.now()
     colorsArray = [];
     colorsHash = {};
     pixel = 0
@@ -180,6 +195,8 @@ export default class Processor {
       indexedPixels[pixel++] = foundIndex;
     }
 
+    this.timing.checkLocalPalette += performance.now() - t0
+
     if (colorsArray.length < 256) {
       return {
         delta: delta,
@@ -192,10 +209,14 @@ export default class Processor {
     // indexed color frames via sampling
 
     // TODO: learning and process is the slowest part
+    t0 = performance.now()
     var nq = new NeuQuant(deltaImageData, deltaImageData.length, sampleInterval || 10);
     var paletteRGB = nq.process();
+    this.timing.quantProcess += performance.now() - t0
+    t0 = performance.now()
     var paletteArray = this.componentizedPaletteToArray(paletteRGB);
-
+    this.timing.quantComponentize += performance.now() - t0
+    t0 = performance.now()
     var k = 0;
     for(var i = 0; i < numberPixels; i++) {
       r = deltaImageData[k++];
@@ -204,6 +225,7 @@ export default class Processor {
       k++; // ignore alpha
       indexedPixels[i] = nq.map(r, g, b);
     }
+    this.timing.quantIndex += performance.now() - t0
 
     return {
       delta: delta,

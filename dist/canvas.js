@@ -88,15 +88,15 @@ window.onload = function() {
 
     var bunny = createVideo("https://tiny-packages.s3.amazonaws.com/dist/big-buck-bunny_trailer.webm")
   }
-  //video()
-  //simple()
+  // video()
+  // simple()
   complex()
 
   let start = Date.now()
 
   const recordingProgress = (count) => {
     recordingStatus.innerHTML = ((Date.now() - start) + 'ms elapsed; Frames: ' + count)
-    if (count > 50) stop = true
+    // if (count > 50) stop = true
   }
 
   const processingProgress = (index, count, frame) => {
