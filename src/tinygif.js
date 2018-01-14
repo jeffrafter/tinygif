@@ -9,7 +9,6 @@ export default class Tinygif {
       seconds: 5,
       frames: null,
       recordingProgress: () => {},
-      processingProgress: () => {},
       renderingProgress: () => {},
     }
 
@@ -37,13 +36,11 @@ export default class Tinygif {
       let delay = tick / 10
 
       let recorder = new Recorder({
-        prerender: this.options.prerender,
         loop: this.options.loop,
         delay: delay | 0,
         width: canvas.width,
         height: canvas.height,
-        processingProgress: this.options.processingProgress,
-        renderingProgress: this.options.renderingProgress,
+        progress: this.options.renderingProgress,
         complete: complete
       })
 
