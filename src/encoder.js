@@ -115,6 +115,7 @@ export default class Encoder {
       frame.y = processed.delta.y
       frame.width = processed.delta.width
       frame.height = processed.delta.height
+      frame.quantizer = processed.quantizer
 
       // Try to save the palette as the global palette if there is none
       if (!this.palette) {
@@ -279,12 +280,14 @@ export default class Encoder {
         let r = deltaImageData[k++]
         let g = deltaImageData[k++]
         let b = deltaImageData[k++]
-        let a = deltaImageData[k++]
-        if (a === 0) {
-          indexedPixels[i] = 0
-        } else {
-          indexedPixels[i] = nq.map(r, g, b)
-        }
+        k++
+        indexedPixels[i] = nq.map(r, g, b)
+        //
+        // if (a === 0) {
+        //   indexedPixels[i] = 0
+        // } else {
+        //   indexedPixels[i] = nq.map(r, g, b)
+        // }
       }
 
       this.quantizer = true
@@ -293,6 +296,7 @@ export default class Encoder {
         delta: delta,
         pixels: indexedPixels,
         palette: paletteArray,
+        quantizer: true
       }
     })
   }
@@ -315,7 +319,7 @@ export default class Encoder {
         num_colors: (frame.palette || this.palette).length,
         palette: frame.palette,
         delay: frame.delay,
-        transparent: 0
+        transparent: frame.quantizer === true ? 0 : null
       })
 
       // Let go of memory fast
