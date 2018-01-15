@@ -81,7 +81,6 @@ export default class Recorder {
     let frame = this.frames[index]
 
     this.encoder.onmessage = (message) => {
-      delete(frame.data)
       this.progress(index, this.frames.length)
       this.encoded += 1
 
@@ -109,5 +108,7 @@ export default class Recorder {
       sample: this.sample,
       loop: this.loop
     })
+    // We don't need the data anymore
+    delete(frame.data)
   }
 }

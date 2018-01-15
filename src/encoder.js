@@ -13,6 +13,7 @@ export default class Encoder {
     this.quantizer = null
     this.previous = null
     this.encoded = 0
+    this.rendered = null
   }
 
   componentizedPaletteToArray(paletteRGB) {
@@ -149,15 +150,42 @@ export default class Encoder {
         }
       }
 
+      // TODO: optimize if everything is changed, just use the incoming data
       // Grab only the changed portion and work with that
       let deltaImageData = new Uint8ClampedArray(delta.width * delta.height * 4)
       let deltaIndex = 0
       for (let y = delta.y, l = delta.y + delta.height; y < l; y++) {
         let start = (y * this.width * 4) + (delta.x * 4)
-        let end = (y * this.width * 4) + (delta.x * 4) + (delta.width  * 4)
-        for (let i = start; i < end; i++) {
+        let end = (y * this.width * 4) + (delta.x * 4) + (delta.width * 4)
+        for (let i = start; i < end; i += 4) {
+          // TODO: this might not be right... if we later use NeuQuant we might
+          // use a mapped color instead
+          if (this.rendered) {
+            // If the color is already the same, make it transparent,
+            // otherwise update it to the new color
+            if (this.rendered[i] === data[i] &&
+                this.rendered[i + 1] === data[i + 1] &&
+                this.rendered[i + 2] === data[i + 2]) {
+              // ignore alpha, make it transparent
+              data[i + 3] = 0
+            } else {
+              this.rendered[i] = data[i]
+              this.rendered[i + 1] = data[i + 1]
+              this.rendered[i + 2] = data[i + 2]
+              // ignore alpha, make it solid
+              this.rendered[i + 3] = 1
+              data[i + 3] = 1
+            }
+          }
           deltaImageData[deltaIndex++] = data[i]
+          deltaImageData[deltaIndex++] = data[i + 1]
+          deltaImageData[deltaIndex++] = data[i + 2]
+          deltaImageData[deltaIndex++] = data[i + 3]
         }
+      }
+
+      if (!this.rendered) {
+        this.rendered = deltaImageData
       }
 
       // Prepare an index array into the palette
@@ -166,7 +194,8 @@ export default class Encoder {
       let pixel = 0
 
       // If we can use the global palette directly let's do it... even if we have
-      // to add a couple more colors
+      // to add a couple more colors, if we used a quantized palette before we
+      // assume we have a more complex image animating and just go down that road
       if (this.palette && !this.quantizer) {
         let globalPaletteMatches = true
         let globalPaletteAdded = false
@@ -174,8 +203,8 @@ export default class Encoder {
           let r = deltaImageData[i]
           let g = deltaImageData[i + 1]
           let b = deltaImageData[i + 2]
-          // Ignore the alpha channel
-          let color = (0 << 24 | r << 16 | g << 8 | b)
+          // ignore alpha, make it solid
+          let color = (1 << 24 | r << 16 | g << 8 | b)
           let foundIndex = this.colors[color]
           // If we didn't find it on the global palette, is there room to add it?
           if (foundIndex == null && this.palette.length >= 255) {
@@ -201,24 +230,32 @@ export default class Encoder {
       // We couldn't use the global palette, try to create a local palette instead
       // Grabbing the unique colors and just using them is way more efficient, but
       // it doesn't work for images > 256 colors; we'll be optimisitic about it
-      let colorsArray = []
+      // We start the palette with a single color 0 which is for transparency. This
+      // reduces our total color space by 1 but is optimal for potential transparency
+      // savings which we won't know a priori, but are betting on.
+      let colorsArray = [0]
       let colorsHash = {}
       pixel = 0
       for (let i = 0, l = deltaImageData.length; i < l; i+=4) {
         let r = deltaImageData[i]
         let g = deltaImageData[i + 1]
         let b = deltaImageData[i + 2]
-        // Ignore the alpha channel
-        let color = (0 << 24 | r << 16 | g << 8 | b)
-        let foundIndex = colorsHash[color]
-        if (foundIndex == null) {
-          colorsArray.push(color)
-          foundIndex = colorsArray.length - 1
-          // If there are already too many colors, just bail on this approach
-          if (foundIndex >= 256) break
-          colorsHash[color] = foundIndex
+        let a = deltaImageData[i + 3]
+        if (a === 0) {
+          indexedPixels[pixel++] = 0 // transparent
+        } else {
+          // Ignore the alpha channel
+          let color = (1 << 24 | r << 16 | g << 8 | b)
+          let foundIndex = colorsHash[color]
+          if (foundIndex == null) {
+            colorsArray.push(color)
+            foundIndex = colorsArray.length - 1
+            // If there are already too many colors, just bail on this approach
+            // if (foundIndex >= 256) break
+            colorsHash[color] = foundIndex
+          }
+          indexedPixels[pixel++] = foundIndex
         }
-        indexedPixels[pixel++] = foundIndex
       }
 
       if (colorsArray.length <= 256) {
@@ -226,8 +263,10 @@ export default class Encoder {
           delta: delta,
           pixels: indexedPixels,
           palette: colorsArray,
-          colors: colorsHash
+          colors: colors
         }
+      } else {
+        console.log("Too many colors: ", colorsArray.length)
       }
 
       // This is the "traditional" animatied gif style of going from RGBA to
@@ -240,8 +279,12 @@ export default class Encoder {
         let r = deltaImageData[k++]
         let g = deltaImageData[k++]
         let b = deltaImageData[k++]
-        k++ // ignore alpha
-        indexedPixels[i] = nq.map(r, g, b)
+        let a = deltaImageData[k++]
+        if (a === 0) {
+          indexedPixels[i] = 0
+        } else {
+          indexedPixels[i] = nq.map(r, g, b)
+        }
       }
 
       this.quantizer = true
@@ -271,7 +314,8 @@ export default class Encoder {
       this.gif.addFrame(frame.x, frame.y, frame.width, frame.height, frame.pixels, {
         num_colors: (frame.palette || this.palette).length,
         palette: frame.palette,
-        delay: frame.delay
+        delay: frame.delay,
+        transparent: 0
       })
 
       // Let go of memory fast
