@@ -204,11 +204,11 @@ export default class Encoder {
           let r = deltaImageData[i]
           let g = deltaImageData[i + 1]
           let b = deltaImageData[i + 2]
-          // ignore alpha, make it solid
+          // Ignore alpha, make it solid
           let color = (1 << 24 | r << 16 | g << 8 | b)
           let foundIndex = this.colors[color]
           // If we didn't find it on the global palette, is there room to add it?
-          if (foundIndex == null && this.palette.length >= 255) {
+          if (foundIndex == null && this.palette.length >= 256) {
             globalPaletteMatches = false
             break
           }
@@ -237,22 +237,22 @@ export default class Encoder {
       let colorsArray = [0]
       let colorsHash = {}
       pixel = 0
-      for (let i = 0, l = deltaImageData.length; i < l; i+=4) {
+      for (let i = 0, l = deltaImageData.length; i < l; i += 4) {
         let r = deltaImageData[i]
         let g = deltaImageData[i + 1]
         let b = deltaImageData[i + 2]
         let a = deltaImageData[i + 3]
         if (a === 0) {
-          indexedPixels[pixel++] = 0 // transparent
+         indexedPixels[pixel++] = 0 // transparent
         } else {
-          // Ignore the alpha channel
+          // Ignore the alpha channel, make it solid
           let color = (1 << 24 | r << 16 | g << 8 | b)
           let foundIndex = colorsHash[color]
           if (foundIndex == null) {
             colorsArray.push(color)
             foundIndex = colorsArray.length - 1
             // If there are already too many colors, just bail on this approach
-            // if (foundIndex >= 256) break
+            if (foundIndex >= 256) break
             colorsHash[color] = foundIndex
           }
           indexedPixels[pixel++] = foundIndex
@@ -266,8 +266,6 @@ export default class Encoder {
           palette: colorsArray,
           colors: colors
         }
-      } else {
-        console.log("Too many colors: ", colorsArray.length)
       }
 
       // This is the "traditional" animatied gif style of going from RGBA to
@@ -275,19 +273,18 @@ export default class Encoder {
       let nq = new NeuQuant(deltaImageData, deltaImageData.length, this.sample || 10)
       let paletteRGB = nq.process()
       let paletteArray = this.componentizedPaletteToArray(paletteRGB)
+      paletteArray.splice(0, 0, 0)
       let k = 0
       for (let i = 0; i < numberPixels; i++) {
         let r = deltaImageData[k++]
         let g = deltaImageData[k++]
         let b = deltaImageData[k++]
-        k++
-        indexedPixels[i] = nq.map(r, g, b)
-        //
-        // if (a === 0) {
-        //   indexedPixels[i] = 0
-        // } else {
-        //   indexedPixels[i] = nq.map(r, g, b)
-        // }
+        let a = deltaImageData[k++]
+        if (a === 0) {
+          indexedPixels[i] = 0
+        } else {
+          indexedPixels[i] = nq.map(r, g, b) + 1
+        }
       }
 
       this.quantizer = true
@@ -295,8 +292,7 @@ export default class Encoder {
       return {
         delta: delta,
         pixels: indexedPixels,
-        palette: paletteArray,
-        quantizer: true
+        palette: paletteArray
       }
     })
   }
@@ -319,7 +315,7 @@ export default class Encoder {
         num_colors: (frame.palette || this.palette).length,
         palette: frame.palette,
         delay: frame.delay,
-        transparent: frame.quantizer === true ? 0 : null
+        transparent: 0
       })
 
       // Let go of memory fast
