@@ -44,7 +44,7 @@ window.onload = function() {
 
     var animate = function() {
       context.drawImage(img, 0, 0, canvas.width, canvas.height);
-      context.fillStyle = "white"
+      context.fillStyle = "red"
       for (var i = 0; i < squares.length; i++) {
         var square = squares[i]
         square.x += square.speed;
@@ -56,6 +56,61 @@ window.onload = function() {
       }
       if (!stop) requestAnimationFrame(animate);
     }
+    animate()
+  }
+
+  var corey = function() {
+    let startedAt = Date.now()
+
+    var animate = () => {
+      let elapsedTime = (Date.now() - startedAt) / 1000
+      context.fillStyle = 'red'
+      context.fillRect(0, 0, 300, 300)
+
+      context.fillStyle = 'black'
+      context.fillText(elapsedTime, 10, 10)
+      u(elapsedTime)
+      requestAnimationFrame(animate)
+    }
+
+    function u(t){
+      let i = 22
+      let lastCenter = {x: 150, y: 150}
+      let lastRadius = 0
+      context.lineWidth=2
+      while(i--) {
+        context.beginPath()
+
+        let angle = (t * i * 2) / 5
+        // if (i % 2 === 0) angle = -angle
+        let newRadius = i * 10
+        let edgeX = lastCenter.x + Math.sin(angle) * lastRadius
+        let edgeY = lastCenter.y + Math.cos(angle) * lastRadius
+
+        let x
+        let y
+        if (lastRadius) {
+          x = lastCenter.x = edgeX - Math.sin(angle) * newRadius
+          y = lastCenter.y = edgeY - Math.cos(angle) * newRadius
+        } else {
+          x = lastCenter.x
+          y = lastCenter.y
+        }
+        let radius = lastRadius = newRadius
+        let startAngle = 0
+        let endAngle = Math.PI * 2
+        if (i % 2 == 0) {
+          context.fillStyle = `rgb(${i * 10}, ${Math.round(Math.cos(t) * 255)}, 255)`
+        } else {
+          context.fillStyle = 'black'
+        }
+        context.arc(x, y, radius, startAngle, endAngle)
+        context.fill()
+        context.stroke()
+      }
+
+    }
+
     animate()
   }
 
@@ -90,7 +145,8 @@ window.onload = function() {
   }
   // video()
   // simple()
-  complex()
+  // complex()
+  corey()
 
   let start = Date.now()
 

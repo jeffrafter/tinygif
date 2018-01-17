@@ -115,7 +115,6 @@ export default class Encoder {
       frame.y = processed.delta.y
       frame.width = processed.delta.width
       frame.height = processed.delta.height
-      frame.quantizer = processed.quantizer
 
       // Try to save the palette as the global palette if there is none
       if (!this.palette) {
@@ -159,8 +158,7 @@ export default class Encoder {
         let start = (y * this.width * 4) + (delta.x * 4)
         let end = (y * this.width * 4) + (delta.x * 4) + (delta.width * 4)
         for (let i = start; i < end; i += 4) {
-          // TODO: this might not be right... if we later use NeuQuant we might
-          // use a mapped color instead
+          let alpha = 1
           if (this.rendered) {
             // If the color is already the same, make it transparent,
             // otherwise update it to the new color
@@ -168,20 +166,18 @@ export default class Encoder {
                 this.rendered[i + 1] === data[i + 1] &&
                 this.rendered[i + 2] === data[i + 2]) {
               // ignore alpha, make it transparent
-              data[i + 3] = 0
+              alpha = 0
             } else {
               this.rendered[i] = data[i]
               this.rendered[i + 1] = data[i + 1]
               this.rendered[i + 2] = data[i + 2]
-              // ignore alpha, make it solid
               this.rendered[i + 3] = 1
-              data[i + 3] = 1
             }
           }
           deltaImageData[deltaIndex++] = data[i]
           deltaImageData[deltaIndex++] = data[i + 1]
           deltaImageData[deltaIndex++] = data[i + 2]
-          deltaImageData[deltaIndex++] = data[i + 3]
+          deltaImageData[deltaIndex++] = alpha
         }
       }
 
@@ -189,7 +185,7 @@ export default class Encoder {
         this.rendered = deltaImageData
       }
 
-      // Prepare an index array into the palette
+      // // Prepare an index array into the palette
       let numberPixels = delta.width * delta.height
       let indexedPixels = new Uint8Array(numberPixels)
       let pixel = 0
@@ -205,7 +201,7 @@ export default class Encoder {
           let g = deltaImageData[i + 1]
           let b = deltaImageData[i + 2]
           // Ignore alpha, make it solid
-          let color = (1 << 24 | r << 16 | g << 8 | b)
+          let color = (r << 16 | g << 8 | b)
           let foundIndex = this.colors[color]
           // If we didn't find it on the global palette, is there room to add it?
           if (foundIndex == null && this.palette.length >= 256) {
@@ -243,10 +239,10 @@ export default class Encoder {
         let b = deltaImageData[i + 2]
         let a = deltaImageData[i + 3]
         if (a === 0) {
-         indexedPixels[pixel++] = 0 // transparent
+          indexedPixels[pixel++] = 0 // transparent
         } else {
           // Ignore the alpha channel, make it solid
-          let color = (1 << 24 | r << 16 | g << 8 | b)
+          let color = (r << 16 | g << 8 | b)
           let foundIndex = colorsHash[color]
           if (foundIndex == null) {
             colorsArray.push(color)
@@ -264,7 +260,7 @@ export default class Encoder {
           delta: delta,
           pixels: indexedPixels,
           palette: colorsArray,
-          colors: colors
+          colors: colorsHash
         }
       }
 
@@ -273,7 +269,7 @@ export default class Encoder {
       let nq = new NeuQuant(deltaImageData, deltaImageData.length, this.sample || 10)
       let paletteRGB = nq.process()
       let paletteArray = this.componentizedPaletteToArray(paletteRGB)
-      paletteArray.splice(0, 0, 0)
+      if (this.encoded > 0) paletteArray.splice(0, 0, 0) // insert a transparent
       let k = 0
       for (let i = 0; i < numberPixels; i++) {
         let r = deltaImageData[k++]
@@ -283,7 +279,7 @@ export default class Encoder {
         if (a === 0) {
           indexedPixels[i] = 0
         } else {
-          indexedPixels[i] = nq.map(r, g, b) + 1
+          indexedPixels[i] = nq.map(r, g, b) + (this.encoded > 0 ? 1 : 0)
         }
       }
 
@@ -311,12 +307,15 @@ export default class Encoder {
         this.ensurePalettePowerOfTwo(frame.palette)
       }
 
-      this.gif.addFrame(frame.x, frame.y, frame.width, frame.height, frame.pixels, {
-        num_colors: (frame.palette || this.palette).length,
-        palette: frame.palette,
-        delay: frame.delay,
-        transparent: 0
-      })
+      if (this.encoded > 0) {
+        this.gif.addFrame(frame.x, frame.y, frame.width, frame.height, frame.pixels, {
+          num_colors: (frame.palette || this.palette).length,
+          palette: frame.palette,
+          delay: frame.delay,
+          transparent: 0,
+          disposal: 1
+        })
+      }
 
       // Let go of memory fast
       if (frame.palette) delete(frame.palette)
