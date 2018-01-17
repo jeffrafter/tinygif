@@ -154,6 +154,7 @@ export default class Encoder {
       // Grab only the changed portion and work with that
       let deltaImageData = new Uint8ClampedArray(delta.width * delta.height * 4)
       let deltaIndex = 0
+      let totalPixels = [0, 0]
       for (let y = delta.y, l = delta.y + delta.height; y < l; y++) {
         let start = (y * this.width * 4) + (delta.x * 4)
         let end = (y * this.width * 4) + (delta.x * 4) + (delta.width * 4)
@@ -167,11 +168,13 @@ export default class Encoder {
                 this.rendered[i + 2] === data[i + 2]) {
               // ignore alpha, make it transparent
               alpha = 0
+              totalPixels[0] += 1
             } else {
               this.rendered[i] = data[i]
               this.rendered[i + 1] = data[i + 1]
               this.rendered[i + 2] = data[i + 2]
               this.rendered[i + 3] = 1
+              totalPixels[1] += 1
             }
           }
           deltaImageData[deltaIndex++] = data[i]
@@ -180,6 +183,7 @@ export default class Encoder {
           deltaImageData[deltaIndex++] = alpha
         }
       }
+      // console.log("Total pixels: ", totalPixels)
 
       if (!this.rendered) {
         this.rendered = deltaImageData

@@ -43,7 +43,7 @@ window.onload = function() {
 
     var animate = function() {
       context.drawImage(img, 0, 0, canvas.width, canvas.height);
-      context.fillStyle = "red"
+      context.fillStyle = "white"
       for (var i = 0; i < squares.length; i++) {
         var square = squares[i]
         square.x += square.speed;
@@ -144,8 +144,8 @@ window.onload = function() {
   }
   // video()
   // simple()
-  // complex()
-  corey()
+  complex()
+  // corey()
 
   let start = Date.now()
 
