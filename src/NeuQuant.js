@@ -32,7 +32,7 @@
 module.exports = function NeuQuant() {
 
     var pixSize = 4; // expect rgba
-    var netsize = 128; // number of colours used
+    var netsize = 255; // number of colours used
 
     // four primes near 500 - assume no image has a length so large
     // that it is divisible by all four primes
@@ -60,7 +60,7 @@ module.exports = function NeuQuant() {
     var betagamma = (intbias << (gammashift - betashift));
 
     // defs for decreasing radius factor
-    // For 128 colors, radius starts at 16.0 biased by 6 bits
+    // For 256 colors, radius starts at 32.0 biased by 6 bits
     // and decreases by a factor of 1/30 each cycle
     var initrad = (netsize >> 3);
     var radiusbiasshift = 6;
@@ -80,7 +80,6 @@ module.exports = function NeuQuant() {
     var alpharadbshift = (alphabiasshift + radbiasshift);
     var alpharadbias = (1 << alpharadbshift);
 
-
     // Input image
     var thepicture;
     // Height * Width * pixSize
@@ -92,7 +91,7 @@ module.exports = function NeuQuant() {
     var network;
     var netindex = [];
 
-    // for network lookup - really 128
+    // for network lookup - really netsize max 256
     var bias = [];
 
     // bias and freq arrays for learning
@@ -135,7 +134,7 @@ module.exports = function NeuQuant() {
         return map;
     }
 
-    // Insertion sort of network and building of netindex[0..127]
+    // Insertion sort of network and building of netindex[0..255]
     // (to do after unbias)
     function inxbuild() {
         var i;
@@ -202,8 +201,8 @@ module.exports = function NeuQuant() {
         }
 
         netindex[previouscol] = (startpos + maxnetpos) >> 1;
-        for (j = previouscol + 1; j < 128; j++) {
-            netindex[j] = maxnetpos; // really 128
+        for (j = previouscol + 1; j < 256; j++) {
+            netindex[j] = maxnetpos; // really netsize - 1 or 254
         }
 
     }
@@ -315,7 +314,7 @@ module.exports = function NeuQuant() {
 
     }
 
-    // Search for BGR values 0..127 (after net is unbiased) and return colour index
+    // Search for BGR values 0..255 (after net is unbiased) and return colour index
     function map(b, g, r) {
         var i;
         var j;
@@ -325,8 +324,8 @@ module.exports = function NeuQuant() {
         var p;
         var best;
 
-        // Biggest possible distance is 128 * pixSize
-        bestd = 1000;
+        // Biggest possible distance is netsize * pixSize
+        bestd = 1024;
         best = -1;
         i = netindex[g]; // index on g
         j = i - 1; // start at netindex[g] and work outwards
@@ -425,7 +424,7 @@ module.exports = function NeuQuant() {
         return colorMap();
     }
 
-    // Unbias network to give byte values 0..127 and record position i
+    // Unbias network to give byte values 0..255 and record position i
     // to prepare for sort
     function unbiasnet() {
         var i;

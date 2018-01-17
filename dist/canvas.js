@@ -1,6 +1,5 @@
 window.onload = function() {
   var recordingStatus = document.getElementById("recording_status");
-  var processingStatus = document.getElementById("processing_status");
   var renderingStatus = document.getElementById("rendering_status");
   var completeStatus = document.getElementById("complete_status");
   var recordButton = document.getElementById("record");
@@ -155,10 +154,6 @@ window.onload = function() {
     // if (count > 50) stop = true
   }
 
-  const processingProgress = (index, count, frame) => {
-    processingStatus.innerHTML = ((Date.now() - start) + 'ms elapsed; Frames: ' + index + '/' + count)
-  }
-
   const renderingProgress = (index, count, frame) => {
     renderingStatus.innerHTML = ((Date.now() - start) + 'ms elapsed; Frames: ' + index + '/' + count)
   }
@@ -169,9 +164,7 @@ window.onload = function() {
     let tg = new Tinygif.default({
       fps: 30,
       frames: count,
-      prerender: true,
       recordingProgress: recordingProgress,
-      processingProgress: processingProgress,
       renderingProgress: renderingProgress,
     })
     let blob = await tg.record(canvas)

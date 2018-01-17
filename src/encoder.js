@@ -185,7 +185,7 @@ export default class Encoder {
         this.rendered = deltaImageData
       }
 
-      // // Prepare an index array into the palette
+      // Prepare an index array into the palette
       let numberPixels = delta.width * delta.height
       let indexedPixels = new Uint8Array(numberPixels)
       let pixel = 0
@@ -264,12 +264,12 @@ export default class Encoder {
         }
       }
 
-      // This is the "traditional" animatied gif style of going from RGBA to
+      // This is the "traditional" animated gif style of going from RGBA to
       // indexed color frames via sampling
       let nq = new NeuQuant(deltaImageData, deltaImageData.length, this.sample || 10)
       let paletteRGB = nq.process()
       let paletteArray = this.componentizedPaletteToArray(paletteRGB)
-      if (this.encoded > 0) paletteArray.splice(0, 0, 0) // insert a transparent
+      paletteArray.splice(0, 0, 0) // insert a transparent
       let k = 0
       for (let i = 0; i < numberPixels; i++) {
         let r = deltaImageData[k++]
@@ -279,7 +279,7 @@ export default class Encoder {
         if (a === 0) {
           indexedPixels[i] = 0
         } else {
-          indexedPixels[i] = nq.map(r, g, b) + (this.encoded > 0 ? 1 : 0)
+          indexedPixels[i] = nq.map(r, g, b) + 1
         }
       }
 
@@ -307,15 +307,13 @@ export default class Encoder {
         this.ensurePalettePowerOfTwo(frame.palette)
       }
 
-      if (this.encoded > 0) {
-        this.gif.addFrame(frame.x, frame.y, frame.width, frame.height, frame.pixels, {
-          num_colors: (frame.palette || this.palette).length,
-          palette: frame.palette,
-          delay: frame.delay,
-          transparent: 0,
-          disposal: 1
-        })
-      }
+      this.gif.addFrame(frame.x, frame.y, frame.width, frame.height, frame.pixels, {
+        num_colors: (frame.palette || this.palette).length,
+        palette: frame.palette, // might be null if using global
+        delay: frame.delay,
+        transparent: 0,
+        disposal: 1
+      })
 
       // Let go of memory fast
       if (frame.palette) delete(frame.palette)
