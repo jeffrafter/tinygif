@@ -7,7 +7,7 @@ export default class Recorder {
     this.progress = options.progress || (() => {})
     this.width = options.width
     this.height = options.height
-    this.sample = options.sample || 10 // smaller == more accurate, larger == faster
+    this.sample = options.sample || 30 // smaller == more accurate, larger == faster, 1..30
     this.loop = options.loop || 0 // null == do not loop; 0 == loop forever; N = number of loops
     this.delay = options.delay || 2 // in hundredths of seconds, 2 == 50 fps
     this.frames = []

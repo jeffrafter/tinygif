@@ -8,7 +8,7 @@ self.onmessage = function(message) {
     let gif = encoder ? encoder.render() : null
     let array = new Uint8Array(gif)
     let blob = new Blob([array], {type: 'image/gif'})
-    console.log(encoder.timing)
+    console.log(JSON.stringify(encoder.timing))
     postMessage({blob: blob})
     close()
     return

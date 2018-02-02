@@ -139,54 +139,60 @@ export default class Encoder {
 
   process(frame) {
     return this.time("process", () => {
-      let previous = this.previous ? this.previous.data : null
+      let t0
       let data = frame.data
+      let deltaImageData
+      let delta
 
       // Find the delta
-      let delta = this.dirtyRect(previous, data)
-      if (!delta) {
-        return {
-          skip: true
+      if (!this.previous) {
+        delta = {x: 0, y: 0, width: this.width, height: this.height }
+        deltaImageData = data
+        this.rendered = deltaImageData
+      } else {
+        delta = this.dirtyRect(this.previous.data, data)
+        // A null result means nothing changed, the frame is the same
+        if (!delta) {
+          return {
+            skip: true
+          }
         }
-      }
 
-      // TODO: optimize if everything is changed, just use the incoming data
-      // Grab only the changed portion and work with that
-      let deltaImageData = new Uint8ClampedArray(delta.width * delta.height * 4)
-      let deltaIndex = 0
-      let totalPixels = [0, 0]
-      for (let y = delta.y, l = delta.y + delta.height; y < l; y++) {
-        let start = (y * this.width * 4) + (delta.x * 4)
-        let end = (y * this.width * 4) + (delta.x * 4) + (delta.width * 4)
-        for (let i = start; i < end; i += 4) {
-          let alpha = 1
-          if (this.rendered) {
+        // Grab only the changed portion and work with that
+        deltaImageData = new Uint8ClampedArray(delta.width * delta.height * 4)
+        let deltaIndex = 0
+        t0 = performance.now()
+        for (let y = delta.y, l = delta.y + delta.height; y < l; y++) {
+          let start = (y * this.width * 4) + (delta.x * 4)
+          let end = (y * this.width * 4) + (delta.x * 4) + (delta.width * 4)
+          for (let i = start; i < end; i += 4) {
+            let r = data[i]
+            let g = data[i + 1]
+            let b = data[i + 2]
             // If the color is already the same, make it transparent,
             // otherwise update it to the new color
-            if (this.rendered[i] === data[i] &&
-                this.rendered[i + 1] === data[i + 1] &&
-                this.rendered[i + 2] === data[i + 2]) {
+            if (this.rendered[i] === r &&
+                this.rendered[i + 1] === g &&
+                this.rendered[i + 2] === b) {
               // ignore alpha, make it transparent
-              alpha = 0
-              totalPixels[0] += 1
+              deltaImageData[deltaIndex++] = r
+              deltaImageData[deltaIndex++] = g
+              deltaImageData[deltaIndex++] = b
+              deltaImageData[deltaIndex++] = 0
             } else {
-              this.rendered[i] = data[i]
-              this.rendered[i + 1] = data[i + 1]
-              this.rendered[i + 2] = data[i + 2]
+              // Pixel has changed, overwrite it
+              this.rendered[i] = r
+              this.rendered[i + 1] = g
+              this.rendered[i + 2] = b
               this.rendered[i + 3] = 1
-              totalPixels[1] += 1
+              deltaImageData[deltaIndex++] = r
+              deltaImageData[deltaIndex++] = g
+              deltaImageData[deltaIndex++] = b
+              deltaImageData[deltaIndex++] = 1
             }
           }
-          deltaImageData[deltaIndex++] = data[i]
-          deltaImageData[deltaIndex++] = data[i + 1]
-          deltaImageData[deltaIndex++] = data[i + 2]
-          deltaImageData[deltaIndex++] = alpha
         }
-      }
-      // console.log("Total pixels: ", totalPixels)
-
-      if (!this.rendered) {
-        this.rendered = deltaImageData
+        this.report("deltaImageData", t0)
       }
 
       // Prepare an index array into the palette
@@ -198,6 +204,7 @@ export default class Encoder {
       // to add a couple more colors, if we used a quantized palette before we
       // assume we have a more complex image animating and just go down that road
       if (this.palette && !this.quantizer) {
+        t0 = performance.now()
         let globalPaletteMatches = true
         let globalPaletteAdded = false
         for (let i = 0, l = deltaImageData.length; i < l; i+=4){
@@ -219,6 +226,7 @@ export default class Encoder {
           }
           indexedPixels[pixel++] = foundIndex
         }
+        this.report("check_global_palette", t0)
 
         if (globalPaletteMatches) {
           return {
@@ -237,6 +245,7 @@ export default class Encoder {
       let colorsArray = [0]
       let colorsHash = {}
       pixel = 0
+      t0 = performance.now()
       for (let i = 0, l = deltaImageData.length; i < l; i += 4) {
         let r = deltaImageData[i]
         let g = deltaImageData[i + 1]
@@ -258,6 +267,7 @@ export default class Encoder {
           indexedPixels[pixel++] = foundIndex
         }
       }
+      // this.report("local", t0)
 
       if (colorsArray.length <= 256) {
         return {
@@ -270,11 +280,16 @@ export default class Encoder {
 
       // This is the "traditional" animated gif style of going from RGBA to
       // indexed color frames via sampling
-      let nq = new NeuQuant(deltaImageData, deltaImageData.length, this.sample || 10)
+      t0 = performance.now()
+      let nq = new NeuQuant(deltaImageData, deltaImageData.length, this.sample)
       let paletteRGB = nq.process()
+      this.report("neuquant", t0)
+
+      t0 = performance.now()
       let paletteArray = this.componentizedPaletteToArray(paletteRGB)
-      paletteArray.splice(0, 0, 0) // insert a transparent
+      paletteArray.splice(0, 0, 0) // insert a transparent index
       let k = 0
+      colorsHash = {}
       for (let i = 0; i < numberPixels; i++) {
         let r = deltaImageData[k++]
         let g = deltaImageData[k++]
@@ -283,9 +298,16 @@ export default class Encoder {
         if (a === 0) {
           indexedPixels[i] = 0
         } else {
-          indexedPixels[i] = nq.map(r, g, b) + 1
+          let color = (r << 16 | g << 8 | b)
+          let foundIndex = colorsHash[color]
+          if (foundIndex == null) {
+            foundIndex = nq.map(r, g, b) + 1
+            colorsHash[color] = foundIndex
+          }
+          indexedPixels[i] = foundIndex
         }
       }
+      this.report("mapping", t0)
 
       this.quantizer = true
 
@@ -384,5 +406,11 @@ export default class Encoder {
     this.timing[key] = this.timing[key] || 0
     this.timing[key] += performance.now() - t0
     return result
+  }
+
+  report(key, t0) {
+    this.timing = this.timing || {}
+    this.timing[key] = this.timing[key] || 0
+    this.timing[key] += performance.now() - t0
   }
 }
