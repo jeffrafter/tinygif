@@ -26,6 +26,8 @@ export default class Recorder {
   // No more frames will be captured, finish up the work and render
   stop() {
     this.capturing = false
+    this.progress(this.frames.length, this.frames.length)
+
     // If processing is all caught up... complete the encoding
     if (this.encoded >= this.frames.length) {
       this.render()
