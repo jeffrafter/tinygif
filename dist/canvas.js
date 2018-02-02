@@ -1,6 +1,5 @@
 window.onload = function() {
   var recordingStatus = document.getElementById("recording_status");
-  var processingStatus = document.getElementById("processing_status");
   var renderingStatus = document.getElementById("rendering_status");
   var completeStatus = document.getElementById("complete_status");
   var recordButton = document.getElementById("record");
@@ -59,6 +58,61 @@ window.onload = function() {
     animate()
   }
 
+  var corey = function() {
+    let startedAt = Date.now()
+
+    var animate = () => {
+      let elapsedTime = (Date.now() - startedAt) / 1000
+      context.fillStyle = 'red'
+      context.fillRect(0, 0, 300, 300)
+
+      context.fillStyle = 'black'
+      context.fillText(elapsedTime, 10, 10)
+      u(elapsedTime)
+      requestAnimationFrame(animate)
+    }
+
+    function u(t){
+      let i = 22
+      let lastCenter = {x: 150, y: 150}
+      let lastRadius = 0
+      context.lineWidth=2
+      while(i--) {
+        context.beginPath()
+
+        let angle = (t * i * 2) / 5
+        // if (i % 2 === 0) angle = -angle
+        let newRadius = i * 10
+        let edgeX = lastCenter.x + Math.sin(angle) * lastRadius
+        let edgeY = lastCenter.y + Math.cos(angle) * lastRadius
+
+        let x
+        let y
+        if (lastRadius) {
+          x = lastCenter.x = edgeX - Math.sin(angle) * newRadius
+          y = lastCenter.y = edgeY - Math.cos(angle) * newRadius
+        } else {
+          x = lastCenter.x
+          y = lastCenter.y
+        }
+        let radius = lastRadius = newRadius
+        let startAngle = 0
+        let endAngle = Math.PI * 2
+        if (i % 2 == 0) {
+          context.fillStyle = `rgb(${i * 10}, ${Math.round(Math.cos(t) * 255)}, 255)`
+        } else {
+          context.fillStyle = 'black'
+        }
+        context.arc(x, y, radius, startAngle, endAngle)
+        context.fill()
+        context.stroke()
+      }
+
+    }
+
+    animate()
+  }
+
   // A video animation
   var video = function() {
     context.fillStyle = "white";
@@ -88,19 +142,16 @@ window.onload = function() {
 
     var bunny = createVideo("https://tiny-packages.s3.amazonaws.com/dist/big-buck-bunny_trailer.webm")
   }
-  //video()
-  //simple()
-  complex()
+  // video()
+  // simple()
+  // complex()
+  corey()
 
   let start = Date.now()
 
   const recordingProgress = (count) => {
     recordingStatus.innerHTML = ((Date.now() - start) + 'ms elapsed; Frames: ' + count)
-    if (count > 50) stop = true
-  }
-
-  const processingProgress = (index, count, frame) => {
-    processingStatus.innerHTML = ((Date.now() - start) + 'ms elapsed; Frames: ' + index + '/' + count)
+    // if (count > 50) stop = true
   }
 
   const renderingProgress = (index, count, frame) => {
@@ -113,9 +164,7 @@ window.onload = function() {
     let tg = new Tinygif.default({
       fps: 30,
       frames: count,
-      prerender: true,
       recordingProgress: recordingProgress,
-      processingProgress: processingProgress,
       renderingProgress: renderingProgress,
     })
     let blob = await tg.record(canvas)
@@ -128,4 +177,5 @@ window.onload = function() {
 
   recordButton.onclick = () => { record() }
   snapshotButton.onclick = () => { record(1) }
+  setTimeout(() => { record() }, 3000)
 };

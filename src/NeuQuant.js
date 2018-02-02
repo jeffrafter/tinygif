@@ -32,7 +32,7 @@
 module.exports = function NeuQuant() {
 
     var pixSize = 4; // expect rgba
-    var netsize = 256; // number of colours used
+    var netsize = 255; // number of colours used
 
     // four primes near 500 - assume no image has a length so large
     // that it is divisible by all four primes
@@ -80,7 +80,6 @@ module.exports = function NeuQuant() {
     var alpharadbshift = (alphabiasshift + radbiasshift);
     var alpharadbias = (1 << alpharadbshift);
 
-
     // Input image
     var thepicture;
     // Height * Width * pixSize
@@ -92,7 +91,7 @@ module.exports = function NeuQuant() {
     var network;
     var netindex = [];
 
-    // for network lookup - really 256
+    // for network lookup - really netsize max 256
     var bias = [];
 
     // bias and freq arrays for learning
@@ -203,7 +202,7 @@ module.exports = function NeuQuant() {
 
         netindex[previouscol] = (startpos + maxnetpos) >> 1;
         for (j = previouscol + 1; j < 256; j++) {
-            netindex[j] = maxnetpos; // really 256
+            netindex[j] = maxnetpos; // really netsize - 1 or 254
         }
 
     }
@@ -325,8 +324,8 @@ module.exports = function NeuQuant() {
         var p;
         var best;
 
-        // Biggest possible distance is 256 * pixSize
-        bestd = 1000;
+        // Biggest possible distance is netsize * pixSize
+        bestd = 1024;
         best = -1;
         i = netindex[g]; // index on g
         j = i - 1; // start at netindex[g] and work outwards

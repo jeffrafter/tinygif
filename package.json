@@ -37,9 +37,6 @@
     "webpack": "3.0",
     "worker-loader": "^1.1.0"
   },
-  "dependencies": {
-    "omggif": "^1.0.8"
-  },
   "babel": {
     "presets": [
       "env"
