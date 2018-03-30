@@ -149,7 +149,7 @@ var Tinygif = function () {
 
         var start = Date.now();
         var count = 0;
-        var context = canvas.getContext('2d');
+        var context = canvas.getContext('2d') || canvas.getContext('webgl');
 
         recorder.start();
         _this.captureInterval = setInterval(function () {
@@ -248,12 +248,19 @@ class Recorder {
 
     delay = delay || this.delay
 
-    let imageData = context.getImageData(0, 0, canvas.width, canvas.height)
-    let data = imageData.data
+    let data
 
-    // Pre-2013 imageData could be a pixel array, backward-compatabile
-    if (typeof data === "CanvasPixelArray") {
-      data = new Uint8Array(imageData.data)
+    if (typeof context === "WebGLRenderingContext") {
+      data = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4)
+      gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, data)
+    } else {
+      let imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+      data = imageData.data
+
+      // Pre-2013 imageData could be a pixel array, backward-compatabile
+      if (typeof data === "CanvasPixelArray") {
+        data = new Uint8Array(imageData.data)
+      }
     }
 
     // Add this frame onto the stack

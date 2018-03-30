@@ -46,7 +46,7 @@ export default class Tinygif {
 
       let start = Date.now()
       let count = 0
-      let context = canvas.getContext('2d')
+      let context = canvas.getContext('2d') || canvas.getContext('webgl')
 
       recorder.start()
       this.captureInterval = setInterval(() => {
