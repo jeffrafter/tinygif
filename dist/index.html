@@ -1,6 +1,7 @@
 <html>
   <head>
     <title>Tinygif Examples</title>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.0.0/dist/phaser.min.js"></script>
     <script src="./tinygif.js"></script>
     <script src="./canvas.js"></script>
   </head>
@@ -15,7 +16,8 @@
       <p id="rendering_status">&nbsp;</p>
       <p id="complete_status">&nbsp;</p>
     </p>
-    <canvas width="300" height="300" id="sample_canvas"></canvas>
+    <div id="sample_canvas">
+    </div>
     <style>
       #processing_status, #recording_status, #rendering_status, #complete_status {
         font-family: Courier, mono;

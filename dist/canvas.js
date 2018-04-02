@@ -4,10 +4,22 @@ window.onload = function() {
   var completeStatus = document.getElementById("complete_status");
   var recordButton = document.getElementById("record");
   var snapshotButton = document.getElementById("snapshot");
-  var canvas = document.getElementById("sample_canvas");
-  var context = canvas.getContext("2d")
 
   var stop = false
+
+  var findCanvas = function() {
+    var sampleCanvas = document.getElementById("sample_canvas");
+    return sampleCanvas.querySelector("canvas")
+  }
+
+  var createCanvas = function() {
+    var sampleCanvas = document.getElementById("sample_canvas");
+    var canvas = document.createElement("canvas")
+    canvas.width = 300
+    canvas.height = 300
+    sampleCanvas.appendChild(canvas)
+    return canvas
+  }
 
   // A simple animation
   var simple = function() {
@@ -19,6 +31,8 @@ window.onload = function() {
       if (pos.x > 300 || pos.x < 0) {
          speed = -speed;
       }
+      var canvas = createCanvas()
+      var context = canvas.getContext("2d")
       context.fillStyle = "black";
       context.fillRect(0, 0, canvas.width, canvas.height);
       context.fillStyle = "purple";
@@ -40,6 +54,8 @@ window.onload = function() {
     var img = new Image()
     img.crossOrigin = "Anonymous"
     img.src = "https://tiny-packages.s3.amazonaws.com/dist/555561.jpg"
+    var canvas = createCanvas()
+    var context = canvas.getContext("2d")
 
     var animate = function() {
       context.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -60,6 +76,8 @@ window.onload = function() {
 
   var corey = function() {
     let startedAt = Date.now()
+    var canvas = createCanvas()
+    var context = canvas.getContext("2d")
 
     var animate = () => {
       let elapsedTime = (Date.now() - startedAt) / 1000
@@ -115,6 +133,8 @@ window.onload = function() {
 
   // A video animation
   var video = function() {
+    var canvas = createCanvas()
+    var context = canvas.getContext("2d")
     context.fillStyle = "white";
     context.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -142,10 +162,62 @@ window.onload = function() {
 
     var bunny = createVideo("https://tiny-packages.s3.amazonaws.com/dist/big-buck-bunny_trailer.webm")
   }
+
+  var phaser = function() {
+    var config = {
+      type: Phaser.CANVAS,
+      parent: 'sample_canvas',
+      width: 500,
+      height: 300,
+      physics: {
+        default: 'arcade',
+        arcade: {
+          gravity: { y: 200 }
+        }
+      },
+      scene: {
+        preload: phaserPreload,
+        create: phaserCreate
+      }
+    };
+
+    var game = new Phaser.Game(config);
+
+    function phaserPreload()
+    {
+      this.load.setBaseURL('https://labs.phaser.io');
+
+      this.load.image('sky', 'assets/skies/space3.png');
+      this.load.image('logo', 'assets/sprites/phaser3-logo.png');
+      this.load.image('red', 'assets/particles/red.png');
+    }
+
+    function phaserCreate () {
+      this.add.image(300, 300, 'sky');
+
+      var particles = this.add.particles('red');
+
+      var emitter = particles.createEmitter({
+        speed: 100,
+        scale: { start: 1, end: 0 },
+        blendMode: 'ADD'
+      });
+
+      var logo = this.physics.add.image(400, 100, 'logo');
+
+      logo.setVelocity(100, 200);
+      logo.setBounce(1, 1);
+      logo.setCollideWorldBounds(true);
+
+      emitter.startFollow(logo);
+    }
+  }
+
   // video()
   // simple()
   // complex()
-  corey()
+  // corey()
+  phaser()
 
   let start = Date.now()
 
@@ -167,6 +239,7 @@ window.onload = function() {
       recordingProgress: recordingProgress,
       renderingProgress: renderingProgress,
     })
+    let canvas = findCanvas()
     let blob = await tg.record(canvas)
     let img = document.createElement("img")
     img.src = URL.createObjectURL(blob)

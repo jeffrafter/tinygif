@@ -61,6 +61,14 @@ record()
 * Upgrade more code to ES2017
 * https://developer.mozilla.org/en-US/docs/Web/API/Transferable, https://developers.google.com/web/updates/2011/12/Transferable-Objects-Lightning-Fast
 
+## Dev
+
+Run a dev server: `yarn start`
+
+Build continuously: `yarn build:watch`
+
+Change the version in `package.json` and `npm publish`
+
 ## Credits
 
 We based it on:
