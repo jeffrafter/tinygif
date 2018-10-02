@@ -11,11 +11,11 @@ This code is based on @sole's https://github.com/sole/Animated_GIF. It adds a fe
 * Attempt to skip duplicate frames
 * Render/write only the changed portion (delta) of each frame
 
-In general this makes processing much faster and significantly reduces the size of the generated files.
+In general this makes processing much faster and significantly reduces the size of the generated files hence, more eficient. 
 
 # How it works
 
-Tinygif records 5 seconds of a canvas and generates a Gif. There are 3 phases:
+Tinygif records 5 seconds of a canvas and generates a Gif. There are three phases:
 
 * **Capturing** - every 20 ms a new frame is captured from the canvas (note 20ms is the default delay for 50 frames per second which is the default FPS)
 * **Processing** - each captured frame is processed to determine the optimal palette for the frame and what changed per frame. This happens in a web worker and starts immediately in the background once frames are captured
