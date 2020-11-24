@@ -1,6 +1,6 @@
 import NeuQuant from "./NeuQuant"
 
-const GifWriter = require('omggif').GifWriter
+const GifWriter = require('./omggif.js').GifWriter
 
 export default class Encoder {
   constructor(options) {
