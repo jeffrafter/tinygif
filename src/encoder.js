@@ -120,11 +120,7 @@ export default class Encoder {
       if (!this.palette) {
         this.palette = frame.palette
         this.colors = frame.colors
-        frame.palette = null
       }
-
-      // If it is the first frame, just use the global palette to save a frame
-      if (this.encoded === 0) frame.palette = null
 
       // We've accounted for the skips and can render the previous frame
       if (this.previous) {
