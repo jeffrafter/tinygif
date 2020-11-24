@@ -1,6 +1,6 @@
 {
   "name": "tinygif",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Fast and efficient animated gif creator in EcmaScript.",
   "main": "dist/tinygif.js",
   "directories": {
@@ -10,12 +10,12 @@
   },
   "scripts": {
     "clean": "rimraf dist",
-    "build": "yarn run webpack",
-    "build:watch": "yarn run webpack --colors --watch",
+    "build": "npx webpack",
+    "build:watch": "npx webpack --colors --watch",
     "lint": "./node_modules/.bin/eslint src",
     "lint-fix": "./node_modules/.bin/eslint --fix src --ext .js",
     "test": "npm run lint",
-    "start": "webpack-dev-server --open"
+    "start": "npx webpack-dev-server --open"
   },
   "keywords": [],
   "author": "Jeff Rafter",
@@ -34,7 +34,9 @@
     "eslint-plugin-import": "^2.8.0",
     "express": "^4.16.2",
     "rimraf": "^2.6.2",
-    "webpack": "3.0",
+    "webpack": "^3.0.0",
+    "webpack-cli": "^4.2.0",
+    "webpack-dev-server": "^3.11.0",
     "worker-loader": "^1.1.0"
   },
   "babel": {
